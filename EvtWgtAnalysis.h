@@ -88,6 +88,7 @@ public :
   bool inFV(double x, double y, double z);
   void MakeHistograms();
   void MakePlotsPmu(bool normalised = false);
+  void MakeEfficiencyPlotsPmu(bool normalised = false, int variable = 0);
   //void MakePlotsCosThetaMu(bool normalised = false);
   TString GetLegendName(string fName); 
   void InstantiateHistograms(Int_t nFunc, vector<string> *funcName);

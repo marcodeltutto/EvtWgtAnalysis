@@ -362,8 +362,15 @@ void EvtWgtAnalysis::CalcEfficiency() {
   xsec_mom_reco_eff->Write();
   xsec_theta_reco_eff->Write();
   
+  xsec_mom_data->Write();
+  xsec_mom_truth->Write();
+  
+  
   // Save +-1 sigma
   for (unsigned int function = 0; function < xsec_mom_eff_p1.size(); function++) {
+    xsec_mom_truth_p1[function]->Write();
+    xsec_mom_data_p1[function]->Write();
+    
     xsec_mom_eff_p1[function]->Write();
     xsec_mom_eff_m1[function]->Write();
     xsec_theta_eff_p1[function]->Write();
@@ -493,6 +500,9 @@ void EvtWgtAnalysis::InstantiateHistogramsEfficiency(Int_t nFunc, vector<string>
     //exit(0);
   }
   
+  // Save the function names
+  functionsName = funcName;
+  
   // Instantiate the histograms
   xsec_mom_truth_p1.resize(funcName->size());
   xsec_mom_truth_m1.resize(funcName->size());
@@ -599,7 +609,7 @@ void EvtWgtAnalysis::InstantiateHistograms(Int_t nFunc, vector<string> *funcName
 }
 
 
-//________________________________
+//__________________________________________________
 void EvtWgtAnalysis::MakePlotsPmu(bool normalised) {
  
   bool makeLatex = true;
@@ -898,7 +908,343 @@ void EvtWgtAnalysis::MakePlotsPmu(bool normalised) {
 
 }
 
+
+
+
+
+
+
+
+
+
+//__________________________________________________________________________
+void EvtWgtAnalysis::MakeEfficiencyPlotsPmu(bool normalised, int variable) {
   
+  bool makeLatex = true;
+  
+  if (histoPmuVec.size() == 0) {
+    cout << "Calling MakeHistograms() first."  << endl;
+    CalcEfficiency();
+  }
+  
+  // Make a directory to store the plots
+  system("rm -rf ./EvtWgtEfficiencyPlots/Cos* ");
+  system("mkdir ./EvtWgtEfficiencyPlots");
+  
+  // Avoid root to dislay the canvases
+  gROOT->SetBatch(kTRUE);
+  
+  // Opening a text file to write the integrals
+  ofstream outfile;
+  outfile.open("./EvtWgtEfficiencyPlots/Integrals.txt");
+  
+  // Open LaTeX file to write the table
+  ofstream latexFile;
+  if(makeLatex) {
+    latexFile.open("./EvtWgtEfficiencyPlots/evtwgtEfficiency.tex");
+    latexFile << "\\begin{table}[]" << endl;
+    latexFile << "\\caption{}" << endl;
+    latexFile << "\\captionsetup{format=hang,labelfont={sf,bf}}" << endl;
+    latexFile << "\\label{tab:}" << endl;
+    latexFile << "\\centering" << endl;
+    latexFile << "\\begin{tabular}{ccc}" << endl;
+    latexFile << "\\toprule" << endl;
+    latexFile << "  &  Integral  &  Difference (\\%) \\\\" << endl;
+    latexFile << "\\midrule" << endl;
+  }
+  
+  // Looping over all the functions
+  for (unsigned int function = 0; function < xsec_mom_eff_p1.size(); function++) {
+    
+    TH1F *histoPmu;
+    TH1F *histoPmu_p1;
+    TH1F *histoPmu_m1;
+    
+    if (variable == 0) {  // Pmu
+      histoPmu    = (TH1F*)xsec_mom_eff->Clone("histoPmu");
+      histoPmu_p1 = (TH1F*)xsec_mom_eff_p1.at(function)->Clone("histoPmu_p1");
+      histoPmu_m1 = (TH1F*)xsec_mom_eff_m1.at(function)->Clone("histoPmu_m1");
+    }
+    else if (variable == 1) { // CosThetaMu
+      histoPmu    = (TH1F*)xsec_theta_eff->Clone("histoPmu");
+      histoPmu_p1 = (TH1F*)xsec_theta_eff_p1.at(function)->Clone("histoPmu_p1");
+      histoPmu_m1 = (TH1F*)xsec_theta_eff_m1.at(function)->Clone("histoPmu_m1");
+    } else {
+      cout << "Invalid option. Exit." << endl;
+      exit(0);
+    }
+    TString SaveName;
+    if(variable == 0) SaveName = "Pmu"+functionsName->at(function);
+    if(variable == 1) SaveName = "CosThetamu"+functionsName->at(function);
+    TString LegName  = GetLegendName(functionsName->at(function));
+    
+    if(normalised) SaveName += "_normalised";
+    
+    /*
+     if(makeLatex) {
+     latexFile << "\\subsection{" << functionsName->at(function) << "}" << endl;
+     latexFile << "\begin{figure}" << endl;
+     latexFile << "\centering" << endl;
+     latexFile << "\subfloat[][caption]" << endl;
+     latexFile << "{\includegraphics[width=0.45\textwidth]{" << SaveName"}} \quad
+     }
+     */
+    double histoPmu_Int = histoPmu->Integral();
+    double histoPmu_p1_Int = histoPmu_p1->Integral();
+    double histoPmu_m1_Int = histoPmu_m1->Integral();
+    
+    
+    if (normalised) {
+      histoPmu->Scale(1./histoPmu_Int);
+      histoPmu_p1->Scale(1./histoPmu_p1_Int);
+      histoPmu_m1->Scale(1./histoPmu_m1_Int);
+    }
+    
+    // Calculate integrals
+    outfile << functionsName->at(function) << endl;
+    outfile << "Integral Nominal:    " << histoPmu->Integral() << endl;
+    outfile << "Integral nominal_p1: " << histoPmu_p1->Integral() << endl;
+    outfile << "Integral nominal_m1: " << histoPmu_m1->Integral() << endl;
+    
+    outfile << "Difference w.r.t. Nominal (%):" << endl;
+    outfile << "nominal_p1: " << (histoPmu_p1->Integral()-histoPmu->Integral())/(histoPmu->Integral())*100. << endl;
+    outfile << "nominal_m1: " << (histoPmu_m1->Integral()-histoPmu->Integral())/(histoPmu->Integral())*100. << endl;
+    outfile << "--------------------------------------" << endl << endl;
+    
+    
+    if(makeLatex) {
+      if (function == 0) latexFile << "$" << "Nominal" << "$ & " << histoPmu->Integral() << " & 0" << "\\\\" << endl;
+      latexFile << "\\midrule" << endl;
+      latexFile << "$" << GetLegendName(functionsName->at(function)) << " + 1\\sigma$ & " << histoPmu_p1->Integral() << " & " << (histoPmu_p1->Integral()-histoPmu->Integral())/(histoPmu->Integral())*100. << "\\\\" << endl;
+      latexFile << "$" << GetLegendName(functionsName->at(function)) << " - 1\\sigma$ & " << histoPmu_m1->Integral() << " & " << (histoPmu_m1->Integral()-histoPmu->Integral())/(histoPmu->Integral())*100. << "\\\\" << endl;
+      
+    }
+    
+    
+    
+    // Define the Canvas
+    TCanvas *c = new TCanvas("c", "canvas", 800, 800);
+    
+    
+    
+    // Upper plot will be in pad1
+    TPad *pad1 = new TPad("pad1", "pad1", 0, 0.3, 1, 1.0);
+    pad1->SetBottomMargin(0); // Upper and lower plot are joined
+    pad1->SetGridx();         // Vertical grid
+    pad1->Draw();             // Draw the upper pad: pad1
+    pad1->cd();               // pad1 becomes the current pad
+    histoPmu_p1->SetMinimum(0.0001); // Otherwise 0 label overlaps
+    histoPmu_p1->SetMaximum(0.5);
+    histoPmu_p1->SetStats(0);          // No statistics on upper plot
+    histoPmu_m1->SetStats(0);          // No statistics on upper plot
+    histoPmu->SetStats(0);          // No statistics on upper plot
+    histoPmu_p1->Draw();               // Draw h1
+    histoPmu->Draw("same");         // Draw h2 on top of h1
+    histoPmu_m1->Draw("same");
+    
+    //uBooNESimulation();
+    
+    if (normalised) {
+      // TLatex
+      double x = 0.87;
+      double y = 0.52;
+      double size = 28;
+      int color = 1;
+      int font = 43;
+      int align = 32;
+      TLatex *latex = new TLatex( x, y, "Area Normalised" );
+      latex->SetNDC();
+      latex->SetTextSize(size);
+      latex->SetTextColor(color);
+      latex->SetTextFont(font);
+      latex->SetTextAlign(align);
+      
+      latex->Draw();
+      
+    }
+    
+    // Do not draw the Y axis label on the upper plot and redraw a small
+    // axis instead, in order to avoid the first label (0) to be clipped.
+    histoPmu->GetYaxis()->SetLabelSize(0.);
+    TGaxis *axis = new TGaxis( -5, 20, -5, 220, 20,220,510,"");
+    axis->SetLabelFont(43); // Absolute font size in pixel (precision 3)
+    axis->SetLabelSize(15);
+    axis->Draw();
+    
+    // Legend for the upper plot
+    TLegend* leg = new TLegend(0.65,0.6,.85,0.87);
+    leg->SetTextFont(42);
+    leg->SetBorderSize(0);
+    //leg->SetHeader("");
+    //leg->SetTextFont(42);
+    //leg->AddEntry(histoPmu, "BBA2005 (Nominal)");
+    //leg->AddEntry(histoPmu_p1, "Dipole");
+    leg->AddEntry(histoPmu, "Nominal");
+    leg->AddEntry(histoPmu_p1, LegName + " + 1#sigma");
+    leg->AddEntry(histoPmu_m1, LegName + " - 1#sigma");
+    leg->Draw();
+    
+    // lower plot will be in pad
+    c->cd();          // Go back to the main canvas before defining pad2
+    TPad *pad2 = new TPad("pad2", "pad2", 0, 0.05, 1, 0.3);
+    pad2->SetTopMargin(0);
+    pad2->SetBottomMargin(0.5);
+    pad2->SetGridx(); // vertical grid
+    //pad2->SetGridy(); // orizontal grid
+    pad2->Draw();
+    pad2->cd();       // pad2 becomes the current pad
+    
+    // Define the first ratio plot
+    TH1F *ratio_p1 = (TH1F*)histoPmu->Clone("ratio_p1");
+    ratio_p1->SetMinimum(0.85);  // Define Y ..
+    ratio_p1->SetMaximum(1.15); // .. range
+    ratio_p1->Sumw2();
+    ratio_p1->SetStats(0);      // No statistics on lower plot
+    ratio_p1->Divide(histoPmu_p1);
+    ratio_p1->SetLineWidth(2);
+    ratio_p1->SetLineColor(kRed+1);
+    ratio_p1->Draw("hist");       // Draw the ratio plot
+    
+    // Define the second ratio plot
+    TH1F *ratio_m1 = (TH1F*)histoPmu->Clone("ratio_m1");
+    ratio_m1->SetMinimum(0.9);  // Define Y ..
+    ratio_m1->SetMaximum(1.1); // .. range
+    ratio_m1->Sumw2();
+    ratio_m1->SetStats(0);      // No statistics on lower plot
+    ratio_m1->Divide(histoPmu_m1);
+    ratio_m1->SetLineWidth(2);
+    ratio_m1->SetLineColor(kGreen+2);
+    ratio_m1->Draw("hist same");       // Draw the ratio plot
+    
+    
+    
+    
+    //**********************
+    //
+    // Settings
+    //
+    //**********************
+    
+    // h1 settings
+    histoPmu->SetLineColor(kBlack);
+    histoPmu->SetLineWidth(2);
+    
+    // Y axis h1 plot settings
+    histoPmu_p1->GetYaxis()->CenterTitle();
+    histoPmu_p1->GetYaxis()->SetTitleSize(25);
+    histoPmu_p1->GetYaxis()->SetTitleFont(43);
+    histoPmu_p1->GetYaxis()->SetTitleOffset(1.55);
+    
+    // h2 settings
+    histoPmu_p1->SetLineColor(kRed+1);
+    histoPmu_p1->SetLineWidth(2);
+    
+    // h3 settings
+    histoPmu_m1->SetLineColor(kGreen+2);
+    histoPmu_m1->SetLineWidth(2);
+    
+    // Ratio plot (ratio_p1) settings
+    ratio_p1->SetTitle(""); // Remove the ratio title
+    
+    // Y axis ratio plot settings
+    ratio_p1->GetYaxis()->SetTitle("Ratio");
+    ratio_p1->GetYaxis()->CenterTitle();
+    ratio_p1->GetYaxis()->SetNdivisions(505);
+    ratio_p1->GetYaxis()->SetTitleSize(25);
+    ratio_p1->GetYaxis()->SetTitleFont(43);
+    ratio_p1->GetYaxis()->SetTitleOffset(1.0);
+    ratio_p1->GetYaxis()->SetLabelFont(43); // Absolute font size in pixel (precision 3)
+    ratio_p1->GetYaxis()->SetLabelSize(15);
+    
+    // X axis ratio plot settings
+    if(variable == 0) ratio_p1->GetXaxis()->SetTitle("p_{#mu} [GeV]");
+    if(variable == 1) ratio_p1->GetXaxis()->SetTitle("cos#theta_{#mu}");
+    ratio_p1->GetXaxis()->CenterTitle();
+    ratio_p1->GetXaxis()->SetTitleSize(25);
+    ratio_p1->GetXaxis()->SetTitleFont(43);
+    ratio_p1->GetXaxis()->SetTitleOffset(3.5);
+    ratio_p1->GetXaxis()->SetLabelFont(43); // Absolute font size in pixel (precision 3)
+    ratio_p1->GetXaxis()->SetLabelSize(20);
+    
+    // Draw linea at 1 in ratio plot
+    TLine *line;
+    if (variable == 0) line = new TLine(0,1,2,1);
+    if (variable == 1) line = new TLine(0,-1,1,1);
+    line->SetLineColor(kBlack);
+    line->SetLineStyle(9); // dashed
+    line->Draw();
+    
+    
+    c->Print("./EvtWgtEfficiencyPlots/" + SaveName + ".C");
+    c->Print("./EvtWgtEfficiencyPlots/" + SaveName + ".pdf");
+    
+    
+    /*
+     //**********************
+     //
+     // Area Normalised plot
+     //
+     //**********************
+     
+     TH1F *histoPmu_copy = (TH1F*)histoPmu->Clone("histoPmu_copy");
+     TH1F *histoPmu_p1_copy = (TH1F*)histoPmu_p1->Clone("histoPmu_p1_copy");
+     TH1F *histoPmu_m1_copy = (TH1F*)histoPmu_m1->Clone("histoPmu_m1_copy");
+     
+     // Area Norm
+     histoPmu_copy->Scale(1./histoPmu_copy->Integral());
+     histoPmu_p1_copy->Scale(1./histoPmu_p1_copy->Integral());
+     histoPmu_m1_copy->Scale(1./histoPmu_m1_copy->Integral());
+     
+     // Draw them in a new canvas
+     TCanvas *c1 = new TCanvas("c1", "canvas", 800, 800);
+     histoPmu_p1_copy->Draw();
+     histoPmu_copy->Draw("same");
+     histoPmu_m1_copy->Draw("same");
+     
+     //Settings
+     histoPmu_p1_copy->GetXaxis()->CenterTitle();
+     histoPmu_p1_copy->GetYaxis()->CenterTitle();
+     //histoPmu_p1_copy->GetYaxis()->SetTitleOffset(1.0);
+     
+     leg->Draw();
+     
+     // TLatex
+     double x = 0.87;
+     double y = 0.52;
+     double size = 28;
+     int color = 1;
+     int font = 43;
+     int align = 32;
+     
+     TLatex *latex = new TLatex( x, y, "Area Normalised" );
+     latex->SetNDC();
+     latex->SetTextSize(size);
+     latex->SetTextColor(color);
+     latex->SetTextFont(font);
+     latex->SetTextAlign(align);
+     
+     latex->Draw();
+     */
+    
+    
+  } // end loop functions
+  
+  if(makeLatex) {
+    latexFile << "\\bottomrule" << endl;
+    latexFile << "\\end{tabular}" << endl;
+    latexFile << "\\end{table}" << endl;
+  }
+  
+}
+
+
+
+
+
+
+
+
+
 //________________________________________________ 
 TString EvtWgtAnalysis::GetLegendName(string fName) {
 
