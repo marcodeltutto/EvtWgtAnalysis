@@ -12,6 +12,7 @@ using namespace std;
 #include "TRandom.h"
 #include "TRotation.h"
 #include "TMath.h"
+#include "THStack.h"
 #include "TH1.h"
 #include "TFile.h"
 #include "TGraph.h"
@@ -918,30 +919,53 @@ void EvtWgtAnalysis::MakePlotsPmu(bool normalised) {
 
 
 //__________________________________________________________________________
-void EvtWgtAnalysis::MakeEfficiencyPlotsPmu(bool normalised, int variable) {
+void EvtWgtAnalysis::MakeEfficiencyPlots(bool normalised, int variable) {
+  
+  // Variable:
+  // 0: efficiency - Pmu
+  // 1: efficiency - CosThetaMu
+  // 2: events - Pmu
+  // 3: events - CosThetaMu
   
   bool makeLatex = true;
   
-  if (histoPmuVec.size() == 0) {
-    cout << "Calling MakeHistograms() first."  << endl;
+  if (xsec_mom_eff_p1.size() == 0 && (variable == 0 || variable == 1)) {
+    cout << "Calling CalcEfficiency() first."  << endl;
     CalcEfficiency();
+  }
+  if (histoPmuVec.size() == 0 && (variable == 2 || variable == 3)) {
+    cout << "Calling MakeHistograms() first."  << endl;
+    MakeHistograms();
   }
   
   // Make a directory to store the plots
-  system("rm -rf ./EvtWgtEfficiencyPlots/Cos* ");
-  system("mkdir ./EvtWgtEfficiencyPlots");
-  
+  //if (variable == 0) system("rm -rf ./EvtWgtEfficiencyPlots/Pmu* ");
+  //if (variable == 1) system("rm -rf ./EvtWgtEfficiencyPlots/Cos* ");
+  //if (variable == 2) system("rm -rf ./EvtWgtEventPlots/Pmu* ");
+  //if (variable == 3) system("rm -rf ./EvtWgtEventPlots/CosThetaMu* ");
+  if (variable == 0 || variable == 1)system("mkdir ./EvtWgtEfficiencyPlots");
+  if (variable == 2 || variable == 3)system("mkdir ./EvtWgtEventPlots");
+
   // Avoid root to dislay the canvases
   gROOT->SetBatch(kTRUE);
   
   // Opening a text file to write the integrals
   ofstream outfile;
-  outfile.open("./EvtWgtEfficiencyPlots/Integrals.txt");
+  if (variable == 0) outfile.open("./EvtWgtEfficiencyPlots/IntegralsPmu.txt");
+  if (variable == 1) outfile.open("./EvtWgtEfficiencyPlots/IntegralsCosThetaMu.txt");
+  if (variable == 2) outfile.open("./EvtWgtEventPlots/IntegralsPmu.txt");
+  if (variable == 3) outfile.open("./EvtWgtEventPlots/IntegralsCosThetaMu.txt");
+
+
+
   
   // Open LaTeX file to write the table
   ofstream latexFile;
   if(makeLatex) {
-    latexFile.open("./EvtWgtEfficiencyPlots/evtwgtEfficiency.tex");
+    if (variable == 0) latexFile.open("./EvtWgtEfficiencyPlots/evtwgtEfficiencyPmu.tex");
+    if (variable == 1) latexFile.open("./EvtWgtEfficiencyPlots/evtwgtEfficiencyCosThetaMu.tex");
+    if (variable == 2) latexFile.open("./EvtWgtEventPlots/evtwgtEventPmu.tex");
+    if (variable == 3) latexFile.open("./EvtWgtEventPlots/evtwgtEventCosThetaMu.tex");
     latexFile << "\\begin{table}[]" << endl;
     latexFile << "\\caption{}" << endl;
     latexFile << "\\captionsetup{format=hang,labelfont={sf,bf}}" << endl;
@@ -954,7 +978,11 @@ void EvtWgtAnalysis::MakeEfficiencyPlotsPmu(bool normalised, int variable) {
   }
   
   // Looping over all the functions
-  for (unsigned int function = 0; function < xsec_mom_eff_p1.size(); function++) {
+  double loopMax;
+  if (variable == 0 || variable == 1) loopMax = xsec_mom_eff_p1.size();
+  if (variable == 2 || variable == 3) loopMax = histoPmuVec.size();
+  
+  for (unsigned int function = 0; function < loopMax; function++) {
     
     TH1F *histoPmu;
     TH1F *histoPmu_p1;
@@ -969,13 +997,24 @@ void EvtWgtAnalysis::MakeEfficiencyPlotsPmu(bool normalised, int variable) {
       histoPmu    = (TH1F*)xsec_theta_eff->Clone("histoPmu");
       histoPmu_p1 = (TH1F*)xsec_theta_eff_p1.at(function)->Clone("histoPmu_p1");
       histoPmu_m1 = (TH1F*)xsec_theta_eff_m1.at(function)->Clone("histoPmu_m1");
-    } else {
+    }
+    else if (variable == 2) { // Pmu
+      histoPmu    = (TH1F*)histoPmuVec.at(function)->Clone("histoPmu");
+      histoPmu_p1 = (TH1F*)histoPmuVec_p1.at(function)->Clone("histoPmu_p1");
+      histoPmu_m1 = (TH1F*)histoPmuVec_m1.at(function)->Clone("histoPmu_m1");
+    }
+    else if (variable == 3) { // CosThetaMu
+      histoPmu    = (TH1F*)histoCosThetaMuVec.at(function)->Clone("histoPmu");
+      histoPmu_p1 = (TH1F*)histoCosThetaMuVec_p1.at(function)->Clone("histoPmu_p1");
+      histoPmu_m1 = (TH1F*)histoCosThetaMuVec_m1.at(function)->Clone("histoPmu_m1");
+    }
+    else {
       cout << "Invalid option. Exit." << endl;
       exit(0);
     }
     TString SaveName;
-    if(variable == 0) SaveName = "Pmu"+functionsName->at(function);
-    if(variable == 1) SaveName = "CosThetamu"+functionsName->at(function);
+    if(variable == 0 || variable == 2) SaveName = "Pmu_"+functionsName->at(function);
+    if(variable == 1 || variable == 3) SaveName = "CosThetaMu_"+functionsName->at(function);
     TString LegName  = GetLegendName(functionsName->at(function));
     
     if(normalised) SaveName += "_normalised";
@@ -1034,7 +1073,7 @@ void EvtWgtAnalysis::MakeEfficiencyPlotsPmu(bool normalised, int variable) {
     pad1->Draw();             // Draw the upper pad: pad1
     pad1->cd();               // pad1 becomes the current pad
     histoPmu_p1->SetMinimum(0.0001); // Otherwise 0 label overlaps
-    histoPmu_p1->SetMaximum(0.5);
+    if (variable == 0 || variable == 1) histoPmu_p1->SetMaximum(0.5);
     histoPmu_p1->SetStats(0);          // No statistics on upper plot
     histoPmu_m1->SetStats(0);          // No statistics on upper plot
     histoPmu->SetStats(0);          // No statistics on upper plot
@@ -1072,7 +1111,9 @@ void EvtWgtAnalysis::MakeEfficiencyPlotsPmu(bool normalised, int variable) {
     axis->Draw();
     
     // Legend for the upper plot
-    TLegend* leg = new TLegend(0.65,0.6,.85,0.87);
+    TLegend* leg;
+    if (variable == 0 || variable == 2) leg = new TLegend(0.65,0.6,.85,0.87);
+    if (variable == 1 || variable == 3) leg = new TLegend(0.216792,0.5723502,0.4172932,0.843318,NULL,"brNDC");
     leg->SetTextFont(42);
     leg->SetBorderSize(0);
     //leg->SetHeader("");
@@ -1093,11 +1134,12 @@ void EvtWgtAnalysis::MakeEfficiencyPlotsPmu(bool normalised, int variable) {
     //pad2->SetGridy(); // orizontal grid
     pad2->Draw();
     pad2->cd();       // pad2 becomes the current pad
-    
+/*
     // Define the first ratio plot
     TH1F *ratio_p1 = (TH1F*)histoPmu->Clone("ratio_p1");
-    ratio_p1->SetMinimum(0.85);  // Define Y ..
-    ratio_p1->SetMaximum(1.15); // .. range
+    // Define the second ratio plot
+    TH1F *ratio_m1 = (TH1F*)histoPmu->Clone("ratio_m1");
+
     ratio_p1->Sumw2();
     ratio_p1->SetStats(0);      // No statistics on lower plot
     ratio_p1->Divide(histoPmu_p1);
@@ -1105,19 +1147,70 @@ void EvtWgtAnalysis::MakeEfficiencyPlotsPmu(bool normalised, int variable) {
     ratio_p1->SetLineColor(kRed+1);
     ratio_p1->Draw("hist");       // Draw the ratio plot
     
-    // Define the second ratio plot
-    TH1F *ratio_m1 = (TH1F*)histoPmu->Clone("ratio_m1");
-    ratio_m1->SetMinimum(0.9);  // Define Y ..
-    ratio_m1->SetMaximum(1.1); // .. range
     ratio_m1->Sumw2();
     ratio_m1->SetStats(0);      // No statistics on lower plot
     ratio_m1->Divide(histoPmu_m1);
     ratio_m1->SetLineWidth(2);
     ratio_m1->SetLineColor(kGreen+2);
     ratio_m1->Draw("hist same");       // Draw the ratio plot
+    */
     
     
+    // Define the first ratio plot
+    TH1F *ratio_p1 = (TH1F*)histoPmu->Clone("ratio_p1");
+    //ratio_p1->SetMinimum(0.92);  // Define Y ..
+    //ratio_p1->SetMaximum(1.08); // .. range
+    //ratio_p1->Sumw2();
+    ratio_p1->SetStats(0);      // No statistics on lower plot
+    ratio_p1->Divide(histoPmu_p1);
+    ratio_p1->SetLineWidth(2);
+    ratio_p1->SetLineColor(kRed+1);
+    //ratio_p1->Draw("hist");       // Draw the ratio plot
     
+    // Define the second ratio plot
+    TH1F *ratio_m1 = (TH1F*)histoPmu->Clone("ratio_m1");
+    //ratio_m1->SetMinimum(0.9);  // Define Y ..
+    //ratio_m1->SetMaximum(1.1); // .. range
+    //ratio_m1->Sumw2();
+    ratio_m1->SetStats(0);      // No statistics on lower plot
+    ratio_m1->Divide(histoPmu_m1);
+    ratio_m1->SetLineWidth(2);
+    ratio_m1->SetLineColor(kGreen+2);
+    //ratio_m1->Draw("hist same");       // Draw the ratio plot
+
+    
+    
+    // Try to set the Y range for the ratio plots
+    double max = ratio_p1->GetMaximum();
+    double min = ratio_p1->GetMinimum();
+    if (ratio_m1->GetMaximum() > max) max = ratio_m1->GetMaximum();
+    if (ratio_m1->GetMinimum() < min) min = ratio_m1->GetMinimum();
+    //ratio_p1->GetYaxis()->SetRangeUser(min+0.1*min, max+0.1*max);
+    //ratio_p1->SetMinimum(max);  // Define Y ..
+    //ratio_p1->SetMaximum(min); // .. range
+    //ratio_m1->SetMinimum(max);  // Define Y ..
+    //ratio_m1->SetMaximum(min); // .. range
+    cout << functionsName->at(function) <<endl;
+    cout << "max: " << max << endl;
+    cout << "min: " << min << endl;
+    
+    // Draw the ratio plot
+    //ratio_p1->Draw("hist");
+    //ratio_m1->Draw("hist same");
+    
+    THStack *hs = new THStack("hs","");
+    hs->Add(ratio_p1);
+    hs->Add(ratio_m1);
+    hs->SetMaximum(hs->GetMaximum("nostack")+0.01/**hs->GetMaximum("nostack")*/);
+    hs->SetMinimum(hs->GetMinimum("nostack")-0.01/**hs->GetMinimum("nostack")*/);
+    cout << "hs->GetMinimum(): " << hs->GetMinimum("nostack") << endl;
+    hs->Draw("NOSTACK");
+
+    
+    //ratio_p1->GetYaxis()->SetRangeUser(min+0.1*min, max+0.1*max);
+
+    
+  
     
     //**********************
     //
@@ -1147,36 +1240,60 @@ void EvtWgtAnalysis::MakeEfficiencyPlotsPmu(bool normalised, int variable) {
     ratio_p1->SetTitle(""); // Remove the ratio title
     
     // Y axis ratio plot settings
-    ratio_p1->GetYaxis()->SetTitle("Ratio");
+    /*ratio_p1->GetYaxis()->SetTitle("Ratio");
     ratio_p1->GetYaxis()->CenterTitle();
     ratio_p1->GetYaxis()->SetNdivisions(505);
     ratio_p1->GetYaxis()->SetTitleSize(25);
     ratio_p1->GetYaxis()->SetTitleFont(43);
     ratio_p1->GetYaxis()->SetTitleOffset(1.0);
     ratio_p1->GetYaxis()->SetLabelFont(43); // Absolute font size in pixel (precision 3)
-    ratio_p1->GetYaxis()->SetLabelSize(15);
+    ratio_p1->GetYaxis()->SetLabelSize(15);*/
+    
+    hs->GetYaxis()->SetTitle("Ratio");
+    hs->GetYaxis()->CenterTitle();
+    hs->GetYaxis()->SetNdivisions(505);
+    hs->GetYaxis()->SetTitleSize(25);
+    hs->GetYaxis()->SetTitleFont(43);
+    hs->GetYaxis()->SetTitleOffset(1.0);
+    hs->GetYaxis()->SetLabelFont(43); // Absolute font size in pixel (precision 3)
+    hs->GetYaxis()->SetLabelSize(15);
+
     
     // X axis ratio plot settings
-    if(variable == 0) ratio_p1->GetXaxis()->SetTitle("p_{#mu} [GeV]");
+    /*if(variable == 0) ratio_p1->GetXaxis()->SetTitle("p_{#mu} [GeV]");
     if(variable == 1) ratio_p1->GetXaxis()->SetTitle("cos#theta_{#mu}");
     ratio_p1->GetXaxis()->CenterTitle();
     ratio_p1->GetXaxis()->SetTitleSize(25);
     ratio_p1->GetXaxis()->SetTitleFont(43);
     ratio_p1->GetXaxis()->SetTitleOffset(3.5);
     ratio_p1->GetXaxis()->SetLabelFont(43); // Absolute font size in pixel (precision 3)
-    ratio_p1->GetXaxis()->SetLabelSize(20);
+    ratio_p1->GetXaxis()->SetLabelSize(20);*/
+    
+    if(variable == 0 || variable == 2) hs->GetXaxis()->SetTitle("p_{#mu} [GeV]");
+    if(variable == 1 || variable == 3) hs->GetXaxis()->SetTitle("cos#theta_{#mu}");
+    hs->GetXaxis()->CenterTitle();
+    hs->GetXaxis()->SetTitleSize(25);
+    hs->GetXaxis()->SetTitleFont(43);
+    hs->GetXaxis()->SetTitleOffset(3.5);
+    hs->GetXaxis()->SetLabelFont(43); // Absolute font size in pixel (precision 3)
+    hs->GetXaxis()->SetLabelSize(20);
     
     // Draw linea at 1 in ratio plot
     TLine *line;
-    if (variable == 0) line = new TLine(0,1,2,1);
-    if (variable == 1) line = new TLine(0,-1,1,1);
+    if (variable == 0 || variable == 2) line = new TLine(0,1,2,1);
+    if (variable == 1 || variable == 3) line = new TLine(-1,1,1,1);
     line->SetLineColor(kBlack);
     line->SetLineStyle(9); // dashed
     line->Draw();
     
-    
-    c->Print("./EvtWgtEfficiencyPlots/" + SaveName + ".C");
-    c->Print("./EvtWgtEfficiencyPlots/" + SaveName + ".pdf");
+    if (variable == 0 || variable == 1) {
+      c->Print("./EvtWgtEfficiencyPlots/" + SaveName + ".C");
+      c->Print("./EvtWgtEfficiencyPlots/" + SaveName + ".pdf");
+    }
+    if (variable == 2 || variable == 3) {
+      c->Print("./EvtWgtEventPlots/" + SaveName + ".C");
+      c->Print("./EvtWgtEventPlots/" + SaveName + ".pdf");
+    }
     
     
     /*
