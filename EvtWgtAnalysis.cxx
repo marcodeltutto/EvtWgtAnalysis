@@ -1085,7 +1085,9 @@ void EvtWgtAnalysis::MakeEfficiencyPlots(bool normalised, int variable) {
     
     if (normalised) {
       // TLatex
-      double x = 0.87;
+      double x;
+      x = 0.87;
+      if (variable == 3) x = 0.46;
       double y = 0.52;
       double size = 28;
       int color = 1;
