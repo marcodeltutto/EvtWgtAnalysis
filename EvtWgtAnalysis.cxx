@@ -154,26 +154,26 @@ void EvtWgtAnalysis::CalcEfficiency() {
       trkorigin[itrk][2] = anaBNBtree->trkorigin_pandoraNuKHit[itrk][2];
     }
     
-//    Short_t         trkbestplane[ntracks_reco]; trkbestplane= anaBNBtree->trkpidbestplane_pandoraNuKHit;
-  //  Float_t         *trklen = anaBNBtree->trklen_pandoraNuKHit;   //[ntracks_trackkalmanhit]
-  //  cout<<"i = "<<i<<"  trklen: "<<trklen[0]<<" "<<trklen[1]<<" "<<trklen[2]<<endl;
+    //    Short_t         trkbestplane[ntracks_reco]; trkbestplane= anaBNBtree->trkpidbestplane_pandoraNuKHit;
+    //  Float_t         *trklen = anaBNBtree->trklen_pandoraNuKHit;   //[ntracks_trackkalmanhit]
+    //  cout<<"i = "<<i<<"  trklen: "<<trklen[0]<<" "<<trklen[1]<<" "<<trklen[2]<<endl;
     
-/*    Float_t         trkstartx[ntracks_reco];  trkstartx = anaBNBtree->trkstartx_pandoraNuKHit;
-    Float_t         *trkstarty = anaBNBtree->trkstarty_pandoraNuKHit;
-    Float_t         *trkstartz = anaBNBtree->trkstartz_pandoraNuKHit;
-    Float_t         *trkendx = anaBNBtree->trkendx_pandoraNuKHit;
-    Float_t         *trkendy = anaBNBtree->trkendy_pandoraNuKHit;
-    Float_t         *trkendz = anaBNBtree->trkendz_pandoraNuKHit;
-    Float_t         *trktheta = anaBNBtree->trktheta_pandoraNuKHit;
-    Float_t         *trkmomrange = anaBNBtree->trkmomrange_pandoraNuKHit;
-    Float_t         *trkcosmicscore_tagger = anaBNBtree->trkcosmicscore_tagger_pandoraNuKHit;
-    Float_t         *trkcosmicscore_flashmatch = anaBNBtree->trkcosmicscore_flashmatch_pandoraNuKHit;
-  */  
+    /*    Float_t         trkstartx[ntracks_reco];  trkstartx = anaBNBtree->trkstartx_pandoraNuKHit;
+     Float_t         *trkstarty = anaBNBtree->trkstarty_pandoraNuKHit;
+     Float_t         *trkstartz = anaBNBtree->trkstartz_pandoraNuKHit;
+     Float_t         *trkendx = anaBNBtree->trkendx_pandoraNuKHit;
+     Float_t         *trkendy = anaBNBtree->trkendy_pandoraNuKHit;
+     Float_t         *trkendz = anaBNBtree->trkendz_pandoraNuKHit;
+     Float_t         *trktheta = anaBNBtree->trktheta_pandoraNuKHit;
+     Float_t         *trkmomrange = anaBNBtree->trkmomrange_pandoraNuKHit;
+     Float_t         *trkcosmicscore_tagger = anaBNBtree->trkcosmicscore_tagger_pandoraNuKHit;
+     Float_t         *trkcosmicscore_flashmatch = anaBNBtree->trkcosmicscore_flashmatch_pandoraNuKHit;
+     */
     Short_t         nvtx = anaBNBtree->nvtx_pandoraNu;
     Float_t         vtxx[maxvtx];
     Float_t         vtxy[maxvtx];
     Float_t         vtxz[maxvtx];
-
+    
     for (int ivertex=0; ivertex<nvtx; ivertex++) {
       vtxx[ivertex] = anaBNBtree->vtxx_pandoraNu[ivertex];
       vtxy[ivertex] = anaBNBtree->vtxy_pandoraNu[ivertex];
@@ -218,7 +218,7 @@ void EvtWgtAnalysis::CalcEfficiency() {
     
     for(int f = 0; f < anaBNBtree->no_flashes; f++) {
       if((anaBNBtree->flash_time[f] > 0 && anaBNBtree->flash_time[f] < 1.6) && anaBNBtree->flash_pe[f] > 50) flashtag = true;
-    //  if(i==1) cout << f << " " << flash_time[f] << " " << flash_pe[f] << endl;
+      //  if(i==1) cout << f << " " << flash_time[f] << " " << flash_pe[f] << endl;
     }
     
     
@@ -265,36 +265,82 @@ void EvtWgtAnalysis::CalcEfficiency() {
       if(longest_track > 0) {
         if(longest_track > 75) {
           if(trkorigin[index_longest_track][anaBNBtree->trkpidbestplane_pandoraNuKHit[index_longest_track]] == 1) {
+            // If I got till this point, it means I have selected the event
+            // Fill the histograms at this point
+            
+            // Save relevant variables here for convenience
+            double momentum_reco = anaBNBtree->trkmomrange_pandoraNuKHit[index_longest_track];
+            double angle_reco;
+            if(vertexatstart[index_longest_track]) angle_reco = cos(anaBNBtree->trktheta_pandoraNuKHit[index_longest_track]);
+            if(vertexatend[index_longest_track])   angle_reco = -cos(anaBNBtree->trktheta_pandoraNuKHit[index_longest_track]);
+            
             if(ccnc_truth == 0 && nuPDG_truth == 14) {
-              // If I got till this point, it means I have selected the event
-              // Fill the histograms at this point
+              
+              // For the efficiency
               xsec_mom_data -> Fill(lep_mom_truth);
-              xsec_mom_reco_data -> Fill(anaBNBtree->trkmomrange_pandoraNuKHit[index_longest_track]);
+              xsec_mom_reco_data -> Fill(momentum_reco);
               xsec_theta_data -> Fill(lep_dcosz_truth);
-              if(vertexatstart[index_longest_track]) xsec_theta_reco_data -> Fill(cos(anaBNBtree->trktheta_pandoraNuKHit[index_longest_track]));
-              if(vertexatend[index_longest_track]) xsec_theta_reco_data -> Fill(-cos(anaBNBtree->trktheta_pandoraNuKHit[index_longest_track]));
+              xsec_theta_reco_data -> Fill(angle_reco);
+              
+              // For the number of events
+              pmu_numu_cc_reco_histo -> Fill(momentum_reco);
+              costhetamu_numu_cc_reco_histo -> Fill(angle_reco);
+              
               // Loop over the re-weighting functions and fill +-1 sigma histograms
               for (int function = 0; function < anaBNBtree->evtwgt_nfunc; function++) {
+                // For the efficiency
                 xsec_mom_data_p1[function] -> Fill(lep_mom_truth, (anaBNBtree->evtwgt_weight->at(function)).at(0));
                 xsec_mom_data_m1[function] -> Fill(lep_mom_truth, (anaBNBtree->evtwgt_weight->at(function)).at(1));
-                xsec_mom_reco_data_p1[function] -> Fill(anaBNBtree->trkmomrange_pandoraNuKHit[index_longest_track], (anaBNBtree->evtwgt_weight->at(function)).at(0));
-                xsec_mom_reco_data_m1[function] -> Fill(anaBNBtree->trkmomrange_pandoraNuKHit[index_longest_track], (anaBNBtree->evtwgt_weight->at(function)).at(1));
+                xsec_mom_reco_data_p1[function] -> Fill(momentum_reco,(anaBNBtree->evtwgt_weight->at(function)).at(0));
+                xsec_mom_reco_data_m1[function] -> Fill(momentum_reco,(anaBNBtree->evtwgt_weight->at(function)).at(1));
                 xsec_theta_data_p1[function] -> Fill(lep_dcosz_truth, (anaBNBtree->evtwgt_weight->at(function)).at(0));
                 xsec_theta_data_m1[function] -> Fill(lep_dcosz_truth, (anaBNBtree->evtwgt_weight->at(function)).at(1));
-                if(vertexatstart[index_longest_track])
-                  xsec_theta_reco_data_p1[function]
-                  -> Fill(cos(anaBNBtree->trktheta_pandoraNuKHit[index_longest_track]), (anaBNBtree->evtwgt_weight->at(function)).at(0));
-                if(vertexatstart[index_longest_track])
-                  xsec_theta_reco_data_m1[function]
-                  -> Fill(cos(anaBNBtree->trktheta_pandoraNuKHit[index_longest_track]), (anaBNBtree->evtwgt_weight->at(function)).at(1));
-                if(vertexatend[index_longest_track])
-                  xsec_theta_reco_data_p1[function]
-                  -> Fill(-cos(anaBNBtree->trktheta_pandoraNuKHit[index_longest_track]), (anaBNBtree->evtwgt_weight->at(function)).at(0));
-                if(vertexatend[index_longest_track])
-                  xsec_theta_reco_data_m1[function]
-                  -> Fill(-cos(anaBNBtree->trktheta_pandoraNuKHit[index_longest_track]), (anaBNBtree->evtwgt_weight->at(function)).at(1));
+                xsec_theta_reco_data_p1[function] -> Fill(angle_reco, (anaBNBtree->evtwgt_weight->at(function)).at(0));
+                xsec_theta_reco_data_m1[function] -> Fill(angle_reco, (anaBNBtree->evtwgt_weight->at(function)).at(1));
+                
+                // For the number of events
+                pmu_numu_cc_reco_histo_p1[function] -> Fill(momentum_reco, (anaBNBtree->evtwgt_weight->at(function)).at(0));
+                pmu_numu_cc_reco_histo_m1[function] -> Fill(momentum_reco, (anaBNBtree->evtwgt_weight->at(function)).at(1));
+                costhetamu_numu_cc_reco_histo_p1[function] -> Fill(angle_reco, (anaBNBtree->evtwgt_weight->at(function)).at(0));
+                costhetamu_numu_cc_reco_histo_m1[function] -> Fill(angle_reco, (anaBNBtree->evtwgt_weight->at(function)).at(1));
+                
+                
               } // end loop over re-weighting functions
-            }
+            } // end numu cc
+            
+            else if(ccnc_truth == 0 && nuPDG_truth == -14) {
+              pmu_anumu_cc_reco_histo -> Fill(momentum_reco);
+              costhetamu_anumu_cc_reco_histo -> Fill(angle_reco);
+              for (int function = 0; function < anaBNBtree->evtwgt_nfunc; function++) {
+                pmu_anumu_cc_reco_histo_p1[function] -> Fill(momentum_reco, (anaBNBtree->evtwgt_weight->at(function)).at(0));
+                pmu_anumu_cc_reco_histo_m1[function] -> Fill(momentum_reco, (anaBNBtree->evtwgt_weight->at(function)).at(1));
+                costhetamu_anumu_cc_reco_histo_p1[function] -> Fill(angle_reco, (anaBNBtree->evtwgt_weight->at(function)).at(0));
+                costhetamu_anumu_cc_reco_histo_m1[function] -> Fill(angle_reco, (anaBNBtree->evtwgt_weight->at(function)).at(1));
+              } // end loop over re-weighting functions
+            } // end anumu cc
+            
+            else if(ccnc_truth == 0 && (nuPDG_truth == 12 || nuPDG_truth == -12)) {
+              pmu_nue_cc_reco_histo -> Fill(momentum_reco);
+              costhetamu_nue_cc_reco_histo -> Fill(angle_reco);
+              for (int function = 0; function < anaBNBtree->evtwgt_nfunc; function++) {
+                pmu_nue_cc_reco_histo_p1[function] -> Fill(momentum_reco, (anaBNBtree->evtwgt_weight->at(function)).at(0));
+                pmu_nue_cc_reco_histo_m1[function] -> Fill(momentum_reco, (anaBNBtree->evtwgt_weight->at(function)).at(1));
+                costhetamu_nue_cc_reco_histo_p1[function] -> Fill(angle_reco, (anaBNBtree->evtwgt_weight->at(function)).at(0));
+                costhetamu_nue_cc_reco_histo_m1[function] -> Fill(angle_reco, (anaBNBtree->evtwgt_weight->at(function)).at(1));
+              } // end loop over re-weighting functions
+            } // end nue anue cc
+            
+            else if (ccnc_truth == 1) {
+              pmu_nc_reco_histo -> Fill(momentum_reco);
+              costhetamu_nc_reco_histo -> Fill(angle_reco);
+              for (int function = 0; function < anaBNBtree->evtwgt_nfunc; function++) {
+                pmu_nc_reco_histo_p1[function] -> Fill(momentum_reco, (anaBNBtree->evtwgt_weight->at(function)).at(0));
+                pmu_nc_reco_histo_m1[function] -> Fill(momentum_reco, (anaBNBtree->evtwgt_weight->at(function)).at(1));
+                costhetamu_nc_reco_histo_p1[function] -> Fill(angle_reco, (anaBNBtree->evtwgt_weight->at(function)).at(0));
+                costhetamu_nc_reco_histo_m1[function] -> Fill(angle_reco, (anaBNBtree->evtwgt_weight->at(function)).at(1));
+              } // end loop over re-weighting functions
+            } // end nc
+            
           }
         } // end longest_track > 75
       } // end longest_track > 0
@@ -351,7 +397,7 @@ void EvtWgtAnalysis::CalcEfficiency() {
   
   //*********************************
   //
-  // Save to file
+  // Save efficiency histograms to file
   //
   //*********************************
   
@@ -383,7 +429,57 @@ void EvtWgtAnalysis::CalcEfficiency() {
   }
   
   f.Close();
-  std::cout << "Histograms saved to eventWeightEfficiency.root" << std::endl;
+  std::cout << "Efficiency histograms saved to eventWeightEfficiency.root" << std::endl;
+  
+  
+  
+  //*********************************
+  //
+  // Save events and backgrounds to file
+  //
+  //*********************************
+  
+  TFile ff = TFile("eventWeightBackground.root", "RECREATE");
+  
+  // Save nominal
+  pmu_numu_cc_reco_histo -> Write();
+  costhetamu_numu_cc_reco_histo -> Write();
+  pmu_anumu_cc_reco_histo -> Write();
+  costhetamu_anumu_cc_reco_histo -> Write();
+  pmu_nue_cc_reco_histo -> Write();
+  costhetamu_nue_cc_reco_histo -> Write();
+  pmu_nc_reco_histo -> Write();
+  costhetamu_nc_reco_histo -> Write();
+  
+  // Save +-1 sigma
+  for (unsigned int function = 0; function < pmu_numu_cc_reco_histo_p1.size(); function++) {
+    pmu_numu_cc_reco_histo_p1[function] -> Write();
+    pmu_numu_cc_reco_histo_m1[function] -> Write();
+    costhetamu_numu_cc_reco_histo_p1[function] -> Write();
+    costhetamu_numu_cc_reco_histo_m1[function] -> Write();
+    
+    pmu_anumu_cc_reco_histo_p1[function] -> Write();
+    pmu_anumu_cc_reco_histo_m1[function] -> Write();
+    costhetamu_anumu_cc_reco_histo_p1[function] -> Write();
+    costhetamu_anumu_cc_reco_histo_m1[function] -> Write();
+    
+    pmu_nue_cc_reco_histo_p1[function] -> Write();
+    pmu_nue_cc_reco_histo_m1[function] -> Write();
+    costhetamu_nue_cc_reco_histo_p1[function] -> Write();
+    costhetamu_nue_cc_reco_histo_m1[function] -> Write();
+    
+    pmu_nc_reco_histo_p1[function] -> Write();
+    pmu_nc_reco_histo_m1[function] -> Write();
+    costhetamu_nc_reco_histo_p1[function] -> Write();
+    costhetamu_nc_reco_histo_m1[function] -> Write();
+    
+  }
+  
+  ff.Close();
+  std::cout << "Background histograms saved to eventWeightBackground.root" << std::endl;
+  
+  
+  
   
 }
 
@@ -526,6 +622,25 @@ void EvtWgtAnalysis::InstantiateHistogramsEfficiency(Int_t nFunc, vector<string>
   xsec_theta_reco_eff_p1.resize(funcName->size());
   xsec_theta_reco_eff_m1.resize(funcName->size());
   
+  pmu_numu_cc_reco_histo_p1.resize(funcName->size());
+  pmu_numu_cc_reco_histo_m1.resize(funcName->size());
+  costhetamu_numu_cc_reco_histo_p1.resize(funcName->size());
+  costhetamu_numu_cc_reco_histo_m1.resize(funcName->size());
+  pmu_anumu_cc_reco_histo_p1.resize(funcName->size());
+  pmu_anumu_cc_reco_histo_m1.resize(funcName->size());
+  costhetamu_anumu_cc_reco_histo_p1.resize(funcName->size());
+  costhetamu_anumu_cc_reco_histo_m1.resize(funcName->size());
+  pmu_nue_cc_reco_histo_p1.resize(funcName->size());
+  pmu_nue_cc_reco_histo_m1.resize(funcName->size());
+  costhetamu_nue_cc_reco_histo_p1.resize(funcName->size());
+  costhetamu_nue_cc_reco_histo_m1.resize(funcName->size());
+  pmu_nc_reco_histo_p1.resize(funcName->size());
+  pmu_nc_reco_histo_m1.resize(funcName->size());
+  costhetamu_nc_reco_histo_p1.resize(funcName->size());
+  costhetamu_nc_reco_histo_m1.resize(funcName->size());
+  
+  
+  
   TString histoTitle;
   for ( int j=0; j<nFunc; j++) {
     histoTitle = "xsec_mom_eff_";
@@ -567,6 +682,41 @@ void EvtWgtAnalysis::InstantiateHistogramsEfficiency(Int_t nFunc, vector<string>
     histoTitle = "xsec_theta_reco_data_";
     xsec_theta_reco_data_p1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Plus1Sigma", ";cos#theta_{#mu};Efficiency", 10, -1, 1);
     xsec_theta_reco_data_m1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Minus1Sigma", ";cos#theta_{#mu};Efficiency", 10, -1, 1);
+    
+    
+    
+    histoTitle = "pmu_numu_cc_reco_histo_";
+    pmu_numu_cc_reco_histo_p1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Plus1Sigma", ";p_{#mu} [GeV];Events", 10, 0, 2);
+    pmu_numu_cc_reco_histo_m1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Minus1Sigma", ";p_{#mu} [GeV];Events", 10, 0, 2);
+    
+    histoTitle = "costhetamu_numu_cc_reco_histo_";
+    costhetamu_numu_cc_reco_histo_p1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Plus1Sigma", ";cos#theta_{#mu};Events", 10, -1, 1);
+    costhetamu_numu_cc_reco_histo_m1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Minus1Sigma", ";cos#theta_{#mu};Events", 10, -1, 1);
+    
+    histoTitle = "pmu_anumu_cc_reco_histo_";
+    pmu_anumu_cc_reco_histo_p1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Plus1Sigma", ";p_{#mu} [GeV];Events", 10, 0, 2);
+    pmu_anumu_cc_reco_histo_m1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Minus1Sigma", ";p_{#mu} [GeV];Events", 10, 0, 2);
+    
+    histoTitle = "costhetamu_anumu_cc_reco_histo_";
+    costhetamu_anumu_cc_reco_histo_p1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Plus1Sigma", ";cos#theta_{#mu};Events", 10, -1, 1);
+    costhetamu_anumu_cc_reco_histo_m1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Minus1Sigma", ";cos#theta_{#mu};Events", 10, -1, 1);
+    
+    histoTitle = "pmu_nue_cc_reco_histo_";
+    pmu_nue_cc_reco_histo_p1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Plus1Sigma", ";p_{#mu} [GeV];Events", 10, 0, 2);
+    pmu_nue_cc_reco_histo_m1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Minus1Sigma", ";p_{#mu} [GeV];Events", 10, 0, 2);
+    
+    histoTitle = "costhetamu_nue_cc_reco_histo_";
+    costhetamu_nue_cc_reco_histo_p1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Plus1Sigma", ";cos#theta_{#mu};Events", 10, -1, 1);
+    costhetamu_nue_cc_reco_histo_m1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Minus1Sigma", ";cos#theta_{#mu};Events", 10, -1, 1);
+    
+    histoTitle = "pmu_nc_reco_histo_";
+    pmu_nc_reco_histo_p1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Plus1Sigma", ";p_{#mu} [GeV];Events", 10, 0, 2);
+    pmu_nc_reco_histo_m1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Minus1Sigma", ";p_{#mu} [GeV];Events", 10, 0, 2);
+    
+    histoTitle = "costhetamu_nc_reco_histo_";
+    costhetamu_nc_reco_histo_p1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Plus1Sigma", ";cos#theta_{#mu};Events", 10, -1, 1);
+    costhetamu_nc_reco_histo_m1.at(j) = new TH1D(histoTitle+funcName->at(j)+"_Minus1Sigma", ";cos#theta_{#mu};Events", 10, -1, 1);
+    
   }
   
 }
@@ -610,305 +760,289 @@ void EvtWgtAnalysis::InstantiateHistograms(Int_t nFunc, vector<string> *funcName
 }
 
 
-//__________________________________________________
-void EvtWgtAnalysis::MakePlotsPmu(bool normalised) {
- 
-  bool makeLatex = true;
 
-  if (histoPmuVec.size() == 0) {
-    cout << "Calling MakeHistograms() first."  << endl;
-    MakeHistograms();
+
+
+
+//__________________________________________
+void EvtWgtAnalysis::MakeBackgroundPlots(int variable) {
+  
+  // Pmu: variable == 0
+  // CosThetaMu: variable == 1
+  
+  if (pmu_numu_cc_reco_histo_p1.size() == 0 || costhetamu_numu_cc_reco_histo_p1.size() == 0 ) {
+    cout << "Calling CalcEfficiency() first."  << endl;
+    CalcEfficiency();
   }
   
-  // Make a directory to store the plots
-  system("mkdir ./EvtWgtPlots");
+  bool makeLatex = true;
+  
+  // Create output directory
+  system("mkdir ./EvtWgtBackgroundPlots");
   
   // Avoid root to dislay the canvases
   gROOT->SetBatch(kTRUE);
   
-  // Opening a text file to write the integrals
-  ofstream outfile;
-  outfile.open("./EvtWgtPlots/Integrals.txt");
   
-  // Open LaTeX file
+  double scaleFactor = 5.3e19/1.22e20;
+  
+  cout << "numu:  " << pmu_numu_cc_reco_histo->Integral() * scaleFactor << endl;
+  cout << "anumu: " << pmu_anumu_cc_reco_histo->Integral() * scaleFactor << endl;
+  cout << "nue:   " << pmu_nue_cc_reco_histo->Integral() * scaleFactor << endl;
+  cout << "nc:    " << pmu_nc_reco_histo->Integral() * scaleFactor << endl;
+  
   ofstream latexFile;
   if(makeLatex) {
-    latexFile.open("./EvtWgtPlots/evtwgt.tex");
+    latexFile.open("./evtwgtBackground.tex");
     latexFile << "\\begin{table}[]" << endl;
     latexFile << "\\caption{}" << endl;
     latexFile << "\\captionsetup{format=hang,labelfont={sf,bf}}" << endl;
     latexFile << "\\label{tab:}" << endl;
     latexFile << "\\centering" << endl;
-    latexFile << "\\begin{tabular}{ccc}" << endl;
+    latexFile << "\\begin{tabular}{ccccc}" << endl;
     latexFile << "\\toprule" << endl;
-    latexFile << "  &  Integral  &  Difference (\\%) \\\\" << endl;
-    latexFile << "\\midrule" << endl;
+    latexFile << "  &  $\\nu_\\mu$ CC  &  $\\bar{\\nu}_\\mu$ CC  & $\\nu_e$, $\\bar{\\nu}_e$ CC  &  NC" << endl;
+    latexFile << "$" << "Nominal" << "$ & " << pmu_numu_cc_reco_histo->Integral()
+    << " & " << pmu_anumu_cc_reco_histo->Integral()
+    << " & " << pmu_nue_cc_reco_histo->Integral()
+    << " & " << pmu_nc_reco_histo->Integral() << "\\\\" << endl;
   }
-
-  // Looping over all the functions
-  for (unsigned int function = 0; function < histoPmuVec.size(); function++) {
+  
+  
+  
+  
+  
+  TCanvas *c = new TCanvas("c", "canvas", 800, 800);
+  
+  double loopMax;
+  loopMax = pmu_numu_cc_reco_histo_p1.size();
+  
+  for (unsigned int function = 0; function < loopMax; function++) {
     
-    TH1F *histoPmu    = (TH1F*)histoPmuVec.at(function)->Clone("histoPmu");
-    TH1F *histoPmu_p1 = (TH1F*)histoPmuVec_p1.at(function)->Clone("histoPmu_p1");
-    TH1F *histoPmu_m1 = (TH1F*)histoPmuVec_m1.at(function)->Clone("histoPmu_m1");
+    TString SaveName;
+    if (variable == 0) SaveName = "Pmu_"+functionsName->at(function);
+    if (variable == 1) SaveName = "CosThetaMu_"+functionsName->at(function);
     
-    TString SaveName = "Pmu"+functionsName->at(function);
-    TString LegName  = GetLegendName(functionsName->at(function));
-    
-    if(normalised) SaveName += "_normalised";
-    
-/*
-    if(makeLatex) {
-      latexFile << "\\subsection{" << functionsName->at(function) << "}" << endl;
-      latexFile << "\begin{figure}" << endl; 
-      latexFile << "\centering" << endl;
-      latexFile << "\subfloat[][caption]" << endl;
-      latexFile << "{\includegraphics[width=0.45\textwidth]{" << SaveName"}} \quad 
-    }   
- */
-    double histoPmu_Int = histoPmu->Integral();
-    double histoPmu_p1_Int = histoPmu_p1->Integral();
-    double histoPmu_m1_Int = histoPmu_m1->Integral();
+    c->SetLogy();                                 // Log scale
+    //c->SetGridy();                                // Horizontal grid
     
     
-    if (normalised) {
-      histoPmu->Scale(1./histoPmu_Int);
-      histoPmu_p1->Scale(1./histoPmu_p1_Int);
-      histoPmu_m1->Scale(1./histoPmu_m1_Int);
-    }
+    TH1F* histo_numu;
+    TH1F* histo_numu_p1;
+    TH1F* histo_numu_m1;
+    TH1F* histo_anumu;
+    TH1F* histo_anumu_p1;
+    TH1F* histo_anumu_m1;
+    TH1F* histo_nue;
+    TH1F* histo_nue_p1;
+    TH1F* histo_nue_m1;
+    TH1F* histo_nc;
+    TH1F* histo_nc_p1;
+    TH1F* histo_nc_m1;
     
-    // Calculate integrals
-    outfile << functionsName->at(function) << endl;
-    outfile << "Integral histoPmu:    " << histoPmu->Integral() << endl;
-    outfile << "Integral histoPmu_p1: " << histoPmu_p1->Integral() << endl;
-    outfile << "Integral histoPmu_m1: " << histoPmu_m1->Integral() << endl;
-    
-    outfile << "Difference w.r.t. histoPmu (%):" << endl;
-    outfile << "histoPmu_p1: " << (histoPmu_p1->Integral()-histoPmu->Integral())/(histoPmu->Integral())*100. << endl;
-    outfile << "histoPmu_p1: " << (histoPmu_m1->Integral()-histoPmu->Integral())/(histoPmu->Integral())*100. << endl;
-    outfile << "--------------------------------------" << endl << endl;
-    
-
-    if(makeLatex) {
-      if (function == 0) latexFile << "$" << "Nominal" << "$ & " << histoPmu->Integral() << " & 0" << "\\\\" << endl;
-      latexFile << "\\midrule" << endl;
-      latexFile << "$" << GetLegendName(functionsName->at(function)) << " + 1\\sigma$ & " << histoPmu_p1->Integral() << " & " << (histoPmu_p1->Integral()-histoPmu->Integral())/(histoPmu->Integral())*100. << "\\\\" << endl;
-      latexFile << "$" << GetLegendName(functionsName->at(function)) << " - 1\\sigma$ & " << histoPmu_m1->Integral() << " & " << (histoPmu_m1->Integral()-histoPmu->Integral())/(histoPmu->Integral())*100. << "\\\\" << endl;
-
-    }
-
-
-    
-    // Define the Canvas
-    TCanvas *c = new TCanvas("c", "canvas", 800, 800);
-    
-    
-    
-    // Upper plot will be in pad1
-    TPad *pad1 = new TPad("pad1", "pad1", 0, 0.3, 1, 1.0);
-    pad1->SetBottomMargin(0); // Upper and lower plot are joined
-    pad1->SetGridx();         // Vertical grid
-    pad1->Draw();             // Draw the upper pad: pad1
-    pad1->cd();               // pad1 becomes the current pad
-    histoPmu_p1->SetMinimum(0.0001); // Otherwise 0 label overlaps
-    histoPmu_p1->SetStats(0);          // No statistics on upper plot
-    histoPmu_m1->SetStats(0);          // No statistics on upper plot
-    histoPmu->SetStats(0);          // No statistics on upper plot
-    histoPmu_p1->Draw();               // Draw h1
-    histoPmu->Draw("same");         // Draw h2 on top of h1
-    histoPmu_m1->Draw("same");
-    
-    //uBooNESimulation();
-    
-    if (normalised) {
-      // TLatex
-      double x = 0.87;
-      double y = 0.52;
-      double size = 28;
-      int color = 1;
-      int font = 43;
-      int align = 32;
-      TLatex *latex = new TLatex( x, y, "Area Normalised" );
-      latex->SetNDC();
-      latex->SetTextSize(size);
-      latex->SetTextColor(color);
-      latex->SetTextFont(font);
-      latex->SetTextAlign(align);
+    if (variable == 0) {
+      histo_numu       = (TH1F*)pmu_numu_cc_reco_histo->Clone("histo_numu");
+      histo_numu_p1    = (TH1F*)pmu_numu_cc_reco_histo_p1[function]->Clone("histo_numu_p1");
+      histo_numu_m1    = (TH1F*)pmu_numu_cc_reco_histo_m1[function]->Clone("histo_numu_m1");
       
-      latex->Draw();
+      histo_anumu       = (TH1F*)pmu_anumu_cc_reco_histo->Clone("histo_anumu");
+      histo_anumu_p1    = (TH1F*)pmu_anumu_cc_reco_histo_p1[function]->Clone("histo_anumu_p1");
+      histo_anumu_m1    = (TH1F*)pmu_anumu_cc_reco_histo_m1[function]->Clone("histo_anumu_m1");
       
+      histo_nue       = (TH1F*)pmu_nue_cc_reco_histo->Clone("histo_nue");
+      histo_nue_p1    = (TH1F*)pmu_nue_cc_reco_histo_p1[function]->Clone("histo_nue_p1");
+      histo_nue_m1    = (TH1F*)pmu_nue_cc_reco_histo_m1[function]->Clone("histo_nue_m1");
+      
+      histo_nc       = (TH1F*)pmu_nc_reco_histo->Clone("histo_nc");
+      histo_nc_p1    = (TH1F*)pmu_nc_reco_histo_p1[function]->Clone("histo_nc_p1");
+      histo_nc_m1    = (TH1F*)pmu_nc_reco_histo_m1[function]->Clone("histo_nc_m1");
+    }
+    else if (variable == 1) {
+      histo_numu       = (TH1F*)costhetamu_numu_cc_reco_histo->Clone("histo_numu");
+      histo_numu_p1    = (TH1F*)costhetamu_numu_cc_reco_histo_p1[function]->Clone("histo_numu_p1");
+      histo_numu_m1    = (TH1F*)costhetamu_numu_cc_reco_histo_m1[function]->Clone("histo_numu_m1");
+      
+      histo_anumu       = (TH1F*)costhetamu_anumu_cc_reco_histo->Clone("histo_anumu");
+      histo_anumu_p1    = (TH1F*)costhetamu_anumu_cc_reco_histo_p1[function]->Clone("histo_anumu_p1");
+      histo_anumu_m1    = (TH1F*)costhetamu_anumu_cc_reco_histo_m1[function]->Clone("histo_anumu_m1");
+      
+      histo_nue       = (TH1F*)costhetamu_nue_cc_reco_histo->Clone("histo_nue");
+      histo_nue_p1    = (TH1F*)costhetamu_nue_cc_reco_histo_p1[function]->Clone("histo_nue_p1");
+      histo_nue_m1    = (TH1F*)costhetamu_nue_cc_reco_histo_m1[function]->Clone("histo_nue_m1");
+      
+      histo_nc       = (TH1F*)costhetamu_nc_reco_histo->Clone("histo_nc");
+      histo_nc_p1    = (TH1F*)costhetamu_nc_reco_histo_p1[function]->Clone("histo_nc_p1");
+      histo_nc_m1    = (TH1F*)costhetamu_nc_reco_histo_m1[function]->Clone("histo_nc_m1");
+    } else {
+      cout << "Invalid option. Exit." << endl;
+      exit(0);
     }
     
-    // Do not draw the Y axis label on the upper plot and redraw a small
-    // axis instead, in order to avoid the first label (0) to be clipped.
-    histoPmu->GetYaxis()->SetLabelSize(0.);
-    TGaxis *axis = new TGaxis( -5, 20, -5, 220, 20,220,510,"");
-    axis->SetLabelFont(43); // Absolute font size in pixel (precision 3)
-    axis->SetLabelSize(15);
-    axis->Draw();
     
-    // Legend for the upper plot
-    TLegend* leg = new TLegend(0.65,0.6,.85,0.87);
+    // Settings
+    histo_numu->SetStats(0);          // No statistics on upper plot
+    if (variable == 1) histo_numu->SetMinimum(1);
+    if (variable == 1) histo_numu->SetMaximum(1e5);
+
+    histo_numu->GetXaxis()->SetTitle("Reconstructed p_{#mu} [GeV]");
+    histo_numu->GetXaxis()->CenterTitle();
+    histo_numu->GetXaxis()->SetTitleSize(25);
+    histo_numu->GetXaxis()->SetTitleFont(43);
+    histo_numu->GetXaxis()->SetTitleOffset(1.45);
+    
+    histo_numu->GetYaxis()->SetTitle("Events");
+    histo_numu->GetYaxis()->CenterTitle();
+    histo_numu->GetYaxis()->SetTitleSize(25);
+    histo_numu->GetYaxis()->SetTitleFont(43);
+    histo_numu->GetYaxis()->SetTitleOffset(1.55);
+    
+    double lineWidth = 1;
+    
+    
+    // Nominal
+    histo_numu  ->Draw();
+    histo_anumu ->Draw("same");
+    histo_nue   ->Draw("same");
+    histo_nc    ->Draw("same");
+    
+    histo_numu  ->SetLineColor(kViolet+1);
+    histo_anumu ->SetLineColor(kBlue+1);
+    histo_nue   ->SetLineColor(kOrange+1);
+    histo_nc    ->SetLineColor(kGreen+1);
+    
+    histo_numu  ->SetLineWidth(lineWidth+1);
+    histo_anumu ->SetLineWidth(lineWidth+1);
+    histo_nue   ->SetLineWidth(lineWidth+1);
+    histo_nc    ->SetLineWidth(lineWidth+1);
+    
+    // +- 1 sigma
+    histo_numu_p1  ->Draw("same");
+    histo_anumu_p1 ->Draw("same");
+    histo_nue_p1   ->Draw("same");
+    histo_nc_p1    ->Draw("same");
+    
+    histo_numu_m1  ->Draw("same");
+    histo_anumu_m1 ->Draw("same");
+    histo_nue_m1   ->Draw("same");
+    histo_nc_m1    ->Draw("same");
+    
+    histo_numu_p1  ->SetLineColor(kViolet+1);
+    histo_anumu_p1 ->SetLineColor(kBlue+1);
+    histo_nue_p1   ->SetLineColor(kOrange+1);
+    histo_nc_p1    ->SetLineColor(kGreen+1);
+    
+    histo_numu_m1  ->SetLineColor(kViolet+1);
+    histo_anumu_m1 ->SetLineColor(kBlue+1);
+    histo_nue_m1   ->SetLineColor(kOrange+1);
+    histo_nc_m1    ->SetLineColor(kGreen+1);
+    
+    histo_numu_p1  ->SetLineStyle(7);
+    histo_anumu_p1 ->SetLineStyle(7);
+    histo_nue_p1   ->SetLineStyle(7);
+    histo_nc_p1    ->SetLineStyle(7);
+    
+    histo_numu_m1  ->SetLineStyle(3);
+    histo_anumu_m1 ->SetLineStyle(3);
+    histo_nue_m1   ->SetLineStyle(3);
+    histo_nc_m1    ->SetLineStyle(3);
+    
+    histo_numu_p1  ->SetLineWidth(lineWidth);
+    histo_anumu_p1 ->SetLineWidth(lineWidth);
+    histo_nue_p1   ->SetLineWidth(lineWidth);
+    histo_nc_p1    ->SetLineWidth(lineWidth);
+    
+    histo_numu_m1  ->SetLineWidth(lineWidth);
+    histo_anumu_m1 ->SetLineWidth(lineWidth);
+    histo_nue_m1   ->SetLineWidth(lineWidth);
+    histo_nc_m1    ->SetLineWidth(lineWidth);
+    
+    
+    // Legend
+    TLegend* leg;
+    if (variable == 0) leg = new TLegend(0.566416,0.5535484,0.8822055,0.8825806,NULL,"brNDC");
+    if (variable == 1) leg = new TLegend(0.1679198,0.5367742,0.4837093,0.8658065,NULL,"brNDC");
     leg->SetTextFont(42);
     leg->SetBorderSize(0);
-    //leg->SetHeader("");
-    //leg->SetTextFont(42);
-    //leg->AddEntry(histoPmu, "BBA2005 (Nominal)");
-    //leg->AddEntry(histoPmu_p1, "Dipole");
-    leg->AddEntry(histoPmu, "Nominal");
-    leg->AddEntry(histoPmu_p1, LegName + " + 1#sigma");
-    leg->AddEntry(histoPmu_m1, LegName + " - 1#sigma");
+    
+    leg->AddEntry(histo_numu,  "#nu_{#mu} CC (nominal)");
+    leg->AddEntry(histo_anumu, "#bar{#nu}_{#mu} CC (nominal)");
+    leg->AddEntry(histo_nue,   "#nu_{e} CC (nominal)");
+    leg->AddEntry(histo_nc,    "NC all flavours (nominal)");
+    
+    leg->AddEntry(histo_numu_p1,  "#nu_{#mu} CC (" + GetLegendName(functionsName->at(function)) + " + 1 #sigma)");
+    leg->AddEntry(histo_anumu_p1, "#bar{#nu}_{#mu} CC (" + GetLegendName(functionsName->at(function)) + " + 1 #sigma)");
+    leg->AddEntry(histo_nue_p1,   "#nu_{e} CC (" + GetLegendName(functionsName->at(function)) + " + 1 #sigma)");
+    leg->AddEntry(histo_nc_p1,    "NC all flavours (" + GetLegendName(functionsName->at(function)) + " + 1 #sigma)");
+    
+    leg->AddEntry(histo_numu_m1,  "#nu_{#mu} CC (" + GetLegendName(functionsName->at(function)) + " - 1 #sigma)");
+    leg->AddEntry(histo_anumu_m1, "#bar{#nu}_{#mu} CC (" + GetLegendName(functionsName->at(function)) + " - 1 #sigma)");
+    leg->AddEntry(histo_nue_m1,   "#nu_{e} CC (" + GetLegendName(functionsName->at(function)) + " - 1 #sigma)");
+    leg->AddEntry(histo_nc_m1,    "NC all flavours (" + GetLegendName(functionsName->at(function)) + " - 1 #sigma)");
+    
     leg->Draw();
     
-    // lower plot will be in pad
-    c->cd();          // Go back to the main canvas before defining pad2
-    TPad *pad2 = new TPad("pad2", "pad2", 0, 0.05, 1, 0.3);
-    pad2->SetTopMargin(0);
-    pad2->SetBottomMargin(0.5);
-    pad2->SetGridx(); // vertical grid
-    //pad2->SetGridy(); // orizontal grid
-    pad2->Draw();
-    pad2->cd();       // pad2 becomes the current pad
     
-    // Define the first ratio plot
-    TH1F *ratio_p1 = (TH1F*)histoPmu->Clone("ratio_p1");
-    ratio_p1->SetMinimum(0.75);  // Define Y ..
-    ratio_p1->SetMaximum(1.25); // .. range
-    ratio_p1->Sumw2();
-    ratio_p1->SetStats(0);      // No statistics on lower plot
-    ratio_p1->Divide(histoPmu_p1);
-    ratio_p1->SetLineWidth(2);
-    ratio_p1->SetLineColor(kRed+1);
-    ratio_p1->Draw("hist");       // Draw the ratio plot
-    
-    // Define the second ratio plot
-    TH1F *ratio_m1 = (TH1F*)histoPmu->Clone("ratio_m1");
-    ratio_m1->SetMinimum(0.8);  // Define Y ..
-    ratio_m1->SetMaximum(1.2); // .. range
-    ratio_m1->Sumw2();
-    ratio_m1->SetStats(0);      // No statistics on lower plot
-    ratio_m1->Divide(histoPmu_m1);
-    ratio_m1->SetLineWidth(2);
-    ratio_m1->SetLineColor(kGreen+2);
-    ratio_m1->Draw("hist same");       // Draw the ratio plot
+    c->Print("./EvtWgtBackgroundPlots/" + SaveName + ".C");
+    c->Print("./EvtWgtBackgroundPlots/" + SaveName + ".pdf");
     
     
     
+    double numu_p1;
+    double numu_m1;
+    double anumu_p1;
+    double anumu_m1;
+    double nue_p1;
+    double nue_m1;
+    double nc_p1;
+    double nc_m1;
     
-    //**********************
-    //
-    // Settings
-    //
-    //**********************
+    if (variable == 0) {
+      numu_p1  = pmu_numu_cc_reco_histo_p1[function]  ->Integral();
+      numu_m1  = pmu_numu_cc_reco_histo_m1[function]  ->Integral();
+      anumu_p1 = pmu_anumu_cc_reco_histo_p1[function] ->Integral();
+      anumu_m1 = pmu_anumu_cc_reco_histo_m1[function] ->Integral();
+      nue_p1   = pmu_nue_cc_reco_histo_p1[function]   ->Integral();
+      nue_m1   = pmu_nue_cc_reco_histo_m1[function]   ->Integral();
+      nc_p1    = pmu_nc_reco_histo_p1[function]       ->Integral();
+      nc_m1    = pmu_nc_reco_histo_m1[function]       ->Integral();
+    } else if (variable == 1) {
+      numu_p1  = costhetamu_numu_cc_reco_histo_p1[function]  ->Integral();
+      numu_m1  = costhetamu_numu_cc_reco_histo_m1[function]  ->Integral();
+      anumu_p1 = costhetamu_anumu_cc_reco_histo_p1[function] ->Integral();
+      anumu_m1 = costhetamu_anumu_cc_reco_histo_m1[function] ->Integral();
+      nue_p1   = costhetamu_nue_cc_reco_histo_p1[function]   ->Integral();
+      nue_m1   = costhetamu_nue_cc_reco_histo_m1[function]   ->Integral();
+      nc_p1    = costhetamu_nc_reco_histo_p1[function]       ->Integral();
+      nc_m1    = costhetamu_nc_reco_histo_m1[function]       ->Integral();
+    }
     
-    // h1 settings
-    histoPmu->SetLineColor(kBlack);
-    histoPmu->SetLineWidth(2);
-    
-    // Y axis h1 plot settings
-    histoPmu_p1->GetYaxis()->CenterTitle();
-    histoPmu_p1->GetYaxis()->SetTitleSize(25);
-    histoPmu_p1->GetYaxis()->SetTitleFont(43);
-    histoPmu_p1->GetYaxis()->SetTitleOffset(1.55);
-    
-    // h2 settings
-    histoPmu_p1->SetLineColor(kRed+1);
-    histoPmu_p1->SetLineWidth(2);
-    
-    // h3 settings
-    histoPmu_m1->SetLineColor(kGreen+2);
-    histoPmu_m1->SetLineWidth(2);
-    
-    // Ratio plot (ratio_p1) settings
-    ratio_p1->SetTitle(""); // Remove the ratio title
-    
-    // Y axis ratio plot settings
-    ratio_p1->GetYaxis()->SetTitle("Ratio");
-    ratio_p1->GetYaxis()->CenterTitle();
-    ratio_p1->GetYaxis()->SetNdivisions(505);
-    ratio_p1->GetYaxis()->SetTitleSize(25);
-    ratio_p1->GetYaxis()->SetTitleFont(43);
-    ratio_p1->GetYaxis()->SetTitleOffset(1.0);
-    ratio_p1->GetYaxis()->SetLabelFont(43); // Absolute font size in pixel (precision 3)
-    ratio_p1->GetYaxis()->SetLabelSize(15);
-    
-    // X axis ratio plot settings
-    ratio_p1->GetXaxis()->CenterTitle();
-    ratio_p1->GetXaxis()->SetTitleSize(25);
-    ratio_p1->GetXaxis()->SetTitleFont(43);
-    ratio_p1->GetXaxis()->SetTitleOffset(3.5);
-    ratio_p1->GetXaxis()->SetLabelFont(43); // Absolute font size in pixel (precision 3)
-    ratio_p1->GetXaxis()->SetLabelSize(20);
-    
-    // Draw linea at 1 in ratio plot
-    TLine *line = new TLine(0,1,2,1);
-    line->SetLineColor(kBlack);
-    line->SetLineStyle(9); // dashed
-    line->Draw();
-    
-    
-    c->Print("./EvtWgtPlots/" + SaveName + ".C");
-    c->Print("./EvtWgtPlots/" + SaveName + ".pdf");
-    
-    
-    /*
-     //**********************
-     //
-     // Area Normalised plot
-     //
-     //**********************
-     
-     TH1F *histoPmu_copy = (TH1F*)histoPmu->Clone("histoPmu_copy");
-     TH1F *histoPmu_p1_copy = (TH1F*)histoPmu_p1->Clone("histoPmu_p1_copy");
-     TH1F *histoPmu_m1_copy = (TH1F*)histoPmu_m1->Clone("histoPmu_m1_copy");
-     
-     // Area Norm
-     histoPmu_copy->Scale(1./histoPmu_copy->Integral());
-     histoPmu_p1_copy->Scale(1./histoPmu_p1_copy->Integral());
-     histoPmu_m1_copy->Scale(1./histoPmu_m1_copy->Integral());
-     
-     // Draw them in a new canvas
-     TCanvas *c1 = new TCanvas("c1", "canvas", 800, 800);
-     histoPmu_p1_copy->Draw();
-     histoPmu_copy->Draw("same");
-     histoPmu_m1_copy->Draw("same");
-     
-     //Settings
-     histoPmu_p1_copy->GetXaxis()->CenterTitle();
-     histoPmu_p1_copy->GetYaxis()->CenterTitle();
-     //histoPmu_p1_copy->GetYaxis()->SetTitleOffset(1.0);
-     
-     leg->Draw();
-     
-     // TLatex
-     double x = 0.87;
-     double y = 0.52;
-     double size = 28;
-     int color = 1;
-     int font = 43;
-     int align = 32;
-     
-     TLatex *latex = new TLatex( x, y, "Area Normalised" );
-     latex->SetNDC();
-     latex->SetTextSize(size);
-     latex->SetTextColor(color);
-     latex->SetTextFont(font);
-     latex->SetTextAlign(align);
-     
-     latex->Draw();
-     */
-    
-    
-  } // end loop functions
-
+    if(makeLatex) {
+      latexFile << "\\midrule" << endl;
+      latexFile << "$" << GetLegendName(functionsName->at(function)) << " + 1\\sigma$ & " << "$ "
+      << " & " << numu_p1
+      << " & " << anumu_p1
+      << " & " << nue_p1
+      << " & " << nc_p1 << "\\\\" << endl;
+      latexFile << "$" << GetLegendName(functionsName->at(function)) << " - 1\\sigma$ & " << "$ "
+      << " & " << numu_m1
+      << " & " << anumu_m1
+      << " & " << nue_m1
+      << " & " << nc_m1 << "\\\\" << endl;
+    }
+  }
+  
+  
+  
+  
   if(makeLatex) {
     latexFile << "\\bottomrule" << endl;
     latexFile << "\\end{tabular}" << endl;
     latexFile << "\\end{table}" << endl;
   }
-
+  
+  
+  
 }
-
 
 
 
@@ -945,7 +1079,7 @@ void EvtWgtAnalysis::MakeEfficiencyPlots(bool normalised, int variable) {
   //if (variable == 3) system("rm -rf ./EvtWgtEventPlots/CosThetaMu* ");
   if (variable == 0 || variable == 1)system("mkdir ./EvtWgtEfficiencyPlots");
   if (variable == 2 || variable == 3)system("mkdir ./EvtWgtEventPlots");
-
+  
   // Avoid root to dislay the canvases
   gROOT->SetBatch(kTRUE);
   
@@ -955,9 +1089,9 @@ void EvtWgtAnalysis::MakeEfficiencyPlots(bool normalised, int variable) {
   if (variable == 1) outfile.open("./EvtWgtEfficiencyPlots/IntegralsCosThetaMu.txt");
   if (variable == 2) outfile.open("./EvtWgtEventPlots/IntegralsPmu.txt");
   if (variable == 3) outfile.open("./EvtWgtEventPlots/IntegralsCosThetaMu.txt");
-
-
-
+  
+  
+  
   
   // Open LaTeX file to write the table
   ofstream latexFile;
@@ -1136,26 +1270,6 @@ void EvtWgtAnalysis::MakeEfficiencyPlots(bool normalised, int variable) {
     //pad2->SetGridy(); // orizontal grid
     pad2->Draw();
     pad2->cd();       // pad2 becomes the current pad
-/*
-    // Define the first ratio plot
-    TH1F *ratio_p1 = (TH1F*)histoPmu->Clone("ratio_p1");
-    // Define the second ratio plot
-    TH1F *ratio_m1 = (TH1F*)histoPmu->Clone("ratio_m1");
-
-    ratio_p1->Sumw2();
-    ratio_p1->SetStats(0);      // No statistics on lower plot
-    ratio_p1->Divide(histoPmu_p1);
-    ratio_p1->SetLineWidth(2);
-    ratio_p1->SetLineColor(kRed+1);
-    ratio_p1->Draw("hist");       // Draw the ratio plot
-    
-    ratio_m1->Sumw2();
-    ratio_m1->SetStats(0);      // No statistics on lower plot
-    ratio_m1->Divide(histoPmu_m1);
-    ratio_m1->SetLineWidth(2);
-    ratio_m1->SetLineColor(kGreen+2);
-    ratio_m1->Draw("hist same");       // Draw the ratio plot
-    */
     
     
     // Define the first ratio plot
@@ -1179,7 +1293,7 @@ void EvtWgtAnalysis::MakeEfficiencyPlots(bool normalised, int variable) {
     ratio_m1->SetLineWidth(2);
     ratio_m1->SetLineColor(kGreen+2);
     //ratio_m1->Draw("hist same");       // Draw the ratio plot
-
+    
     
     
     // Try to set the Y range for the ratio plots
@@ -1207,12 +1321,12 @@ void EvtWgtAnalysis::MakeEfficiencyPlots(bool normalised, int variable) {
     hs->SetMinimum(hs->GetMinimum("nostack")-0.01/**hs->GetMinimum("nostack")*/);
     cout << "hs->GetMinimum(): " << hs->GetMinimum("nostack") << endl;
     hs->Draw("NOSTACK");
-
+    
     
     //ratio_p1->GetYaxis()->SetRangeUser(min+0.1*min, max+0.1*max);
-
     
-  
+    
+    
     
     //**********************
     //
@@ -1241,15 +1355,6 @@ void EvtWgtAnalysis::MakeEfficiencyPlots(bool normalised, int variable) {
     // Ratio plot (ratio_p1) settings
     ratio_p1->SetTitle(""); // Remove the ratio title
     
-    // Y axis ratio plot settings
-    /*ratio_p1->GetYaxis()->SetTitle("Ratio");
-    ratio_p1->GetYaxis()->CenterTitle();
-    ratio_p1->GetYaxis()->SetNdivisions(505);
-    ratio_p1->GetYaxis()->SetTitleSize(25);
-    ratio_p1->GetYaxis()->SetTitleFont(43);
-    ratio_p1->GetYaxis()->SetTitleOffset(1.0);
-    ratio_p1->GetYaxis()->SetLabelFont(43); // Absolute font size in pixel (precision 3)
-    ratio_p1->GetYaxis()->SetLabelSize(15);*/
     
     hs->GetYaxis()->SetTitle("Ratio");
     hs->GetYaxis()->CenterTitle();
@@ -1259,17 +1364,7 @@ void EvtWgtAnalysis::MakeEfficiencyPlots(bool normalised, int variable) {
     hs->GetYaxis()->SetTitleOffset(1.0);
     hs->GetYaxis()->SetLabelFont(43); // Absolute font size in pixel (precision 3)
     hs->GetYaxis()->SetLabelSize(15);
-
     
-    // X axis ratio plot settings
-    /*if(variable == 0) ratio_p1->GetXaxis()->SetTitle("p_{#mu} [GeV]");
-    if(variable == 1) ratio_p1->GetXaxis()->SetTitle("cos#theta_{#mu}");
-    ratio_p1->GetXaxis()->CenterTitle();
-    ratio_p1->GetXaxis()->SetTitleSize(25);
-    ratio_p1->GetXaxis()->SetTitleFont(43);
-    ratio_p1->GetXaxis()->SetTitleOffset(3.5);
-    ratio_p1->GetXaxis()->SetLabelFont(43); // Absolute font size in pixel (precision 3)
-    ratio_p1->GetXaxis()->SetLabelSize(20);*/
     
     if(variable == 0 || variable == 2) hs->GetXaxis()->SetTitle("p_{#mu} [GeV]");
     if(variable == 1 || variable == 3) hs->GetXaxis()->SetTitle("cos#theta_{#mu}");
@@ -1297,55 +1392,6 @@ void EvtWgtAnalysis::MakeEfficiencyPlots(bool normalised, int variable) {
       c->Print("./EvtWgtEventPlots/" + SaveName + ".pdf");
     }
     
-    
-    /*
-     //**********************
-     //
-     // Area Normalised plot
-     //
-     //**********************
-     
-     TH1F *histoPmu_copy = (TH1F*)histoPmu->Clone("histoPmu_copy");
-     TH1F *histoPmu_p1_copy = (TH1F*)histoPmu_p1->Clone("histoPmu_p1_copy");
-     TH1F *histoPmu_m1_copy = (TH1F*)histoPmu_m1->Clone("histoPmu_m1_copy");
-     
-     // Area Norm
-     histoPmu_copy->Scale(1./histoPmu_copy->Integral());
-     histoPmu_p1_copy->Scale(1./histoPmu_p1_copy->Integral());
-     histoPmu_m1_copy->Scale(1./histoPmu_m1_copy->Integral());
-     
-     // Draw them in a new canvas
-     TCanvas *c1 = new TCanvas("c1", "canvas", 800, 800);
-     histoPmu_p1_copy->Draw();
-     histoPmu_copy->Draw("same");
-     histoPmu_m1_copy->Draw("same");
-     
-     //Settings
-     histoPmu_p1_copy->GetXaxis()->CenterTitle();
-     histoPmu_p1_copy->GetYaxis()->CenterTitle();
-     //histoPmu_p1_copy->GetYaxis()->SetTitleOffset(1.0);
-     
-     leg->Draw();
-     
-     // TLatex
-     double x = 0.87;
-     double y = 0.52;
-     double size = 28;
-     int color = 1;
-     int font = 43;
-     int align = 32;
-     
-     TLatex *latex = new TLatex( x, y, "Area Normalised" );
-     latex->SetNDC();
-     latex->SetTextSize(size);
-     latex->SetTextColor(color);
-     latex->SetTextFont(font);
-     latex->SetTextAlign(align);
-     
-     latex->Draw();
-     */
-    
-    
   } // end loop functions
   
   if(makeLatex) {
@@ -1364,9 +1410,9 @@ void EvtWgtAnalysis::MakeEfficiencyPlots(bool normalised, int variable) {
 
 
 
-//________________________________________________ 
+//________________________________________________
 TString EvtWgtAnalysis::GetLegendName(string fName) {
-
+  
   TString legName = "null";
   if (fName.find("qema") != std::string::npos) legName = "M_{A}^{CCQE}";
   if (fName.find("ncelEta") != std::string::npos) legName = "#eta^{NCEL}";
@@ -1406,7 +1452,7 @@ TString EvtWgtAnalysis::GetLegendName(string fName) {
   if (fName.find("ntraNukePIinel") != std::string::npos) legName = "x_{inel}^{PI}";
   if (fName.find("ntraNukePIabs") != std::string::npos) legName = "x_{abs}^{PI}";
   if (fName.find("ntraNukePIpi") != std::string::npos) legName = "x_{pi}^{PI}";
-
+  
   return legName;
 }
 
