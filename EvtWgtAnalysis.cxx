@@ -793,7 +793,8 @@ void EvtWgtAnalysis::MakeBackgroundPlots(int variable) {
   
   ofstream latexFile;
   if(makeLatex) {
-    latexFile.open("./evtwgtBackground.tex");
+    if (variable == 0) latexFile.open("./EvtWgtBackgroundPlots/evtwgtBackgroundPmu.tex");
+    if (variable == 1) latexFile.open("./EvtWgtBackgroundPlots/evtwgtBackgroundCosThetaMu.tex");
     latexFile << "\\begin{table}[]" << endl;
     latexFile << "\\caption{}" << endl;
     latexFile << "\\captionsetup{format=hang,labelfont={sf,bf}}" << endl;
@@ -801,7 +802,8 @@ void EvtWgtAnalysis::MakeBackgroundPlots(int variable) {
     latexFile << "\\centering" << endl;
     latexFile << "\\begin{tabular}{ccccc}" << endl;
     latexFile << "\\toprule" << endl;
-    latexFile << "  &  $\\nu_\\mu$ CC  &  $\\bar{\\nu}_\\mu$ CC  & $\\nu_e$, $\\bar{\\nu}_e$ CC  &  NC" << endl;
+    latexFile << "  &  $\\nu_\\mu$ CC  &  $\\bar{\\nu}_\\mu$ CC  & $\\nu_e$, $\\bar{\\nu}_e$ CC  &  NC \\\\" << endl;
+    latexFile << "\\midrule" << endl;
     latexFile << "$" << "Nominal" << "$ & " << pmu_numu_cc_reco_histo->Integral()
     << " & " << pmu_anumu_cc_reco_histo->Integral()
     << " & " << pmu_nue_cc_reco_histo->Integral()
@@ -884,7 +886,8 @@ void EvtWgtAnalysis::MakeBackgroundPlots(int variable) {
     if (variable == 1) histo_numu->SetMinimum(1);
     if (variable == 1) histo_numu->SetMaximum(1e5);
 
-    histo_numu->GetXaxis()->SetTitle("Reconstructed p_{#mu} [GeV]");
+    if (variable == 0) histo_numu->GetXaxis()->SetTitle("Reconstructed p_{#mu} [GeV]");
+    if (variable == 1) histo_numu->GetXaxis()->SetTitle("Reconstructed cos#theta_{#mu} [GeV]");
     histo_numu->GetXaxis()->CenterTitle();
     histo_numu->GetXaxis()->SetTitleSize(25);
     histo_numu->GetXaxis()->SetTitleFont(43);
@@ -1018,12 +1021,12 @@ void EvtWgtAnalysis::MakeBackgroundPlots(int variable) {
     
     if(makeLatex) {
       latexFile << "\\midrule" << endl;
-      latexFile << "$" << GetLegendName(functionsName->at(function)) << " + 1\\sigma$ & " << "$ "
+      latexFile << "$" << GetLegendName(functionsName->at(function)) << " + 1\\sigma$ "
       << " & " << numu_p1
       << " & " << anumu_p1
       << " & " << nue_p1
       << " & " << nc_p1 << "\\\\" << endl;
-      latexFile << "$" << GetLegendName(functionsName->at(function)) << " - 1\\sigma$ & " << "$ "
+      latexFile << "$" << GetLegendName(functionsName->at(function)) << " - 1\\sigma$ "
       << " & " << numu_m1
       << " & " << anumu_m1
       << " & " << nue_m1
