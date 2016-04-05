@@ -1,8 +1,22 @@
 # EvtWgtAnalysis
 Code to study GENIE model uncertainties at MicroBooNE.
 
+#Compile
 
-Run with:
+```
+cd AnaTree
+root -l
+.L AnaBNB.C+
+.q
+cd ..
+root -l
+> gSystem->Load("AnaTree/AnaBNB_C.so");
+> .L EvtWgtAnalysis.cxx+
+```
+
+
+
+##Run
 
 ```
 source SetupEvtWgtAnalysis.sh
@@ -21,16 +35,9 @@ source SetupEvtWgtAnalysis.sh
 python RunEvtWgtAnalysis.py
 ```
 
-Compile with:
+##Generate new AnaBNB_C.so 
 
-```
-root -l
-> gSystem->Load("AnaTree/AnaBNB_C.so");
-> .L EvtWgtAnalysis.cxx+
-```
-
-
-Generate new AnaBNB_C.so:
+Change file path in makeClass.C first, then:
 
 ```
 cd AnaTree
@@ -38,3 +45,5 @@ root -l makeClass.C
 root -l
 .L AnaBNB.C+
 ```
+
+
