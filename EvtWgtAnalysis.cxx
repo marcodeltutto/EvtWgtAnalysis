@@ -792,6 +792,11 @@ void EvtWgtAnalysis::MakeBackgroundPlots(int variable) {
   cout << "nc:    " << pmu_nc_reco_histo->Integral() * scaleFactor << endl;
   
   ofstream latexFile;
+  double numu_nominal = pmu_numu_cc_reco_histo->Integral();
+  double anumu_nominal = pmu_anumu_cc_reco_histo->Integral();
+  double nue_nominal = pmu_nue_cc_reco_histo->Integral();
+  double nc_nominal = pmu_nc_reco_histo->Integral();
+
   if(makeLatex) {
     if (variable == 0) latexFile.open("./EvtWgtBackgroundPlots/evtwgtBackgroundPmu.tex");
     if (variable == 1) latexFile.open("./EvtWgtBackgroundPlots/evtwgtBackgroundCosThetaMu.tex");
@@ -800,14 +805,15 @@ void EvtWgtAnalysis::MakeBackgroundPlots(int variable) {
     latexFile << "\\captionsetup{format=hang,labelfont={sf,bf}}" << endl;
     latexFile << "\\label{tab:}" << endl;
     latexFile << "\\centering" << endl;
-    latexFile << "\\begin{tabular}{ccccc}" << endl;
+    latexFile << "\\begin{tabular}{c   c c  c c  c c  c c}" << endl;
     latexFile << "\\toprule" << endl;
-    latexFile << "  &  $\\nu_\\mu$ CC  &  $\\bar{\\nu}_\\mu$ CC  & $\\nu_e$, $\\bar{\\nu}_e$ CC  &  NC \\\\" << endl;
+    latexFile << "  &  \\multicolumn{2}{ c }{$\\nu_\\mu$ CC} &  \\multicolumn{2}{ c }{$\\bar{\\nu}_\\mu$ CC}   & \\multicolumn{2}{ c }{$\\nu_e$, $\\bar{\\nu}_e$ CC}   &  \\multicolumn{2}{ c }{NC} \\\\" << endl;
+    latexFile << "  &  Events   &  Diff. (\\%) &  Events  &  Diff. (\\%) & Events  &  Diff. (\\%) &  Events &  Diff. (\\%) \\\\" << endl;
     latexFile << "\\midrule" << endl;
-    latexFile << "$" << "Nominal" << "$ & " << pmu_numu_cc_reco_histo->Integral()
-    << " & " << pmu_anumu_cc_reco_histo->Integral()
-    << " & " << pmu_nue_cc_reco_histo->Integral()
-    << " & " << pmu_nc_reco_histo->Integral() << "\\\\" << endl;
+    latexFile << "Nominal & " << pmu_numu_cc_reco_histo->Integral() << " & 0 "
+    << " & " << pmu_anumu_cc_reco_histo->Integral() << " & 0 "
+    << " & " << pmu_nue_cc_reco_histo->Integral() << " & 0 "
+    << " & " << pmu_nc_reco_histo->Integral() << " & 0 " << "\\\\" << endl;
   }
   
   
@@ -1020,17 +1026,31 @@ void EvtWgtAnalysis::MakeBackgroundPlots(int variable) {
     }
     
     if(makeLatex) {
+      double numu_diff_p1 = (numu_p1 -numu_nominal)/numu_nominal * 100.;
+      double numu_diff_m1 = (numu_p1 -numu_nominal)/numu_nominal * 100.;
+      
+      double anumu_diff_p1 = (anumu_p1 -anumu_nominal)/anumu_nominal * 100.;
+      double anumu_diff_m1 = (anumu_m1 -anumu_nominal)/anumu_nominal * 100.;
+
+      double nue_diff_p1 = (nue_p1 -nue_nominal)/nue_nominal * 100.;
+      double nue_diff_m1 = (nue_m1 -nue_nominal)/nue_nominal * 100.;
+      
+      double nc_diff_p1 = (nc_p1 -nc_nominal)/nc_nominal * 100.;
+      double nc_diff_m1 = (nc_p1 -nc_nominal)/nc_nominal * 100.;
+
+
       latexFile << "\\midrule" << endl;
       latexFile << "$" << GetLegendName(functionsName->at(function)) << " + 1\\sigma$ "
-      << " & " << numu_p1
-      << " & " << anumu_p1
-      << " & " << nue_p1
-      << " & " << nc_p1 << "\\\\" << endl;
+      << " & " << std::setprecision(5) << numu_p1  << " & " << std::setprecision(2) << numu_diff_p1
+      << " & " << std::setprecision(5) << anumu_p1 << " & " << std::setprecision(2) << anumu_diff_p1
+      << " & " << std::setprecision(5) << nue_p1   << " & " << std::setprecision(2) << nue_diff_p1
+      << " & " << std::setprecision(5) << nc_p1    << " & " << std::setprecision(2) << nc_diff_p1 << "\\\\" << endl;
+      
       latexFile << "$" << GetLegendName(functionsName->at(function)) << " - 1\\sigma$ "
-      << " & " << numu_m1
-      << " & " << anumu_m1
-      << " & " << nue_m1
-      << " & " << nc_m1 << "\\\\" << endl;
+      << " & " << std::setprecision(5) << numu_m1  << " & " << std::setprecision(2) << numu_diff_m1
+      << " & " << std::setprecision(5) << anumu_m1 << " & " << std::setprecision(2) << anumu_diff_m1
+      << " & " << std::setprecision(5) << nue_m1   << " & " << std::setprecision(2) << nue_diff_m1
+      << " & " << std::setprecision(5) << nc_m1    << " & " << std::setprecision(2) << nc_diff_m1 << "\\\\" << endl;
     }
   }
   
