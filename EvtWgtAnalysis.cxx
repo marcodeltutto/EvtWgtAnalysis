@@ -893,7 +893,7 @@ void EvtWgtAnalysis::MakeBackgroundPlots(int variable) {
     if (variable == 1) histo_numu->SetMaximum(1e5);
 
     if (variable == 0) histo_numu->GetXaxis()->SetTitle("Reconstructed p_{#mu} [GeV]");
-    if (variable == 1) histo_numu->GetXaxis()->SetTitle("Reconstructed cos#theta_{#mu} [GeV]");
+    if (variable == 1) histo_numu->GetXaxis()->SetTitle("Reconstructed cos#theta_{#mu}");
     histo_numu->GetXaxis()->CenterTitle();
     histo_numu->GetXaxis()->SetTitleSize(25);
     histo_numu->GetXaxis()->SetTitleFont(43);
