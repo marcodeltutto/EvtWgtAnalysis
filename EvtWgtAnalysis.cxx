@@ -190,7 +190,11 @@ void EvtWgtAnalysis::CalcEfficiency() {
       if(inFV(nuvtxx_truth, nuvtxy_truth, nuvtxz_truth)) {
         xsec_mom_truth -> Fill(lep_mom_truth);
         xsec_theta_truth -> Fill(lep_dcosz_truth);
+        all_evts_nominal++;
         for (int function = 0; function < anaBNBtree->evtwgt_nfunc; function++) {
+          all_evts_p1[function] += (anaBNBtree->evtwgt_weight->at(function)).at(0);
+          all_evts_m1[function] += (anaBNBtree->evtwgt_weight->at(function)).at(1);
+          
           xsec_mom_truth_p1[function] -> Fill(lep_mom_truth, (anaBNBtree->evtwgt_weight->at(function)).at(0));
           xsec_mom_truth_m1[function] -> Fill(lep_mom_truth, (anaBNBtree->evtwgt_weight->at(function)).at(1));
           xsec_theta_truth_p1[function] -> Fill(lep_dcosz_truth, (anaBNBtree->evtwgt_weight->at(function)).at(0));
@@ -277,6 +281,8 @@ void EvtWgtAnalysis::CalcEfficiency() {
             if(ccnc_truth == 0 && nuPDG_truth == 14) {
               
               // For the efficiency
+              sel_evts_nominal ++;
+              
               xsec_mom_data -> Fill(lep_mom_truth);
               xsec_mom_reco_data -> Fill(momentum_reco);
               xsec_theta_data -> Fill(lep_dcosz_truth);
@@ -289,6 +295,9 @@ void EvtWgtAnalysis::CalcEfficiency() {
               // Loop over the re-weighting functions and fill +-1 sigma histograms
               for (int function = 0; function < anaBNBtree->evtwgt_nfunc; function++) {
                 // For the efficiency
+                sel_evts_p1[function] += (anaBNBtree->evtwgt_weight->at(function)).at(0);
+                sel_evts_m1[function] += (anaBNBtree->evtwgt_weight->at(function)).at(1);
+                
                 xsec_mom_data_p1[function] -> Fill(lep_mom_truth, (anaBNBtree->evtwgt_weight->at(function)).at(0));
                 xsec_mom_data_m1[function] -> Fill(lep_mom_truth, (anaBNBtree->evtwgt_weight->at(function)).at(1));
                 xsec_mom_reco_data_p1[function] -> Fill(momentum_reco,(anaBNBtree->evtwgt_weight->at(function)).at(0));
@@ -600,7 +609,12 @@ void EvtWgtAnalysis::InstantiateHistogramsEfficiency(Int_t nFunc, vector<string>
   // Save the function names
   functionsName = funcName;
   
-  // Instantiate the histograms
+  // Resize the vectors
+  all_evts_p1.resize(funcName->size());
+  all_evts_m1.resize(funcName->size());
+  sel_evts_p1.resize(funcName->size());
+  sel_evts_m1.resize(funcName->size());
+
   xsec_mom_truth_p1.resize(funcName->size());
   xsec_mom_truth_m1.resize(funcName->size());
   xsec_theta_truth_p1.resize(funcName->size());
@@ -639,8 +653,15 @@ void EvtWgtAnalysis::InstantiateHistogramsEfficiency(Int_t nFunc, vector<string>
   costhetamu_nc_reco_histo_p1.resize(funcName->size());
   costhetamu_nc_reco_histo_m1.resize(funcName->size());
   
+  // Initialize counters
+  for ( int j=0; j<nFunc; j++) {
+    all_evts_p1[j] = 0.;
+    all_evts_m1[j] = 0.;
+    sel_evts_p1[j] = 0.;
+    sel_evts_m1[j] = 0.;
+  }
   
-  
+  // Instantiate the histograms
   TString histoTitle;
   for ( int j=0; j<nFunc; j++) {
     histoTitle = "xsec_mom_eff_";
@@ -1075,8 +1096,8 @@ void EvtWgtAnalysis::MakeBackgroundPlots(int variable) {
 
 
 
-//__________________________________________________________________________
-void EvtWgtAnalysis::MakeEfficiencyPlots(bool normalised, int variable) {
+//_____________________________________________________________
+void EvtWgtAnalysis::MakePlots(bool normalised, int variable) {
   
   // Variable:
   // 0: efficiency - Pmu
@@ -1130,7 +1151,8 @@ void EvtWgtAnalysis::MakeEfficiencyPlots(bool normalised, int variable) {
     latexFile << "\\centering" << endl;
     latexFile << "\\begin{tabular}{ccc}" << endl;
     latexFile << "\\toprule" << endl;
-    latexFile << "  &  Integral  &  Difference (\\%) \\\\" << endl;
+    if (variable == 0 || variable == 1) latexFile << "  &  Efficiency  &  Difference (\\%) \\\\" << endl;
+    else latexFile << "  &  Integral  &  Difference (\\%) \\\\" << endl;
     latexFile << "\\midrule" << endl;
   }
   
@@ -1209,10 +1231,30 @@ void EvtWgtAnalysis::MakeEfficiencyPlots(bool normalised, int variable) {
     
     
     if(makeLatex) {
-      if (function == 0) latexFile << "$" << "Nominal" << "$ & " << histoPmu->Integral() << " & 0" << "\\\\" << endl;
-      latexFile << "\\midrule" << endl;
-      latexFile << "$" << GetLegendName(functionsName->at(function)) << " + 1\\sigma$ & " << histoPmu_p1->Integral() << " & " << (histoPmu_p1->Integral()-histoPmu->Integral())/(histoPmu->Integral())*100. << "\\\\" << endl;
-      latexFile << "$" << GetLegendName(functionsName->at(function)) << " - 1\\sigma$ & " << histoPmu_m1->Integral() << " & " << (histoPmu_m1->Integral()-histoPmu->Integral())/(histoPmu->Integral())*100. << "\\\\" << endl;
+      if ( (variable == 2) || (variable == 3) ) {
+        if (function == 0) latexFile << "Nominal" << " & " << histoPmu->Integral() << " & 0" << "\\\\" << endl;
+        latexFile << "\\midrule" << endl;
+        latexFile << "$" << GetLegendName(functionsName->at(function)) << " + 1\\sigma$ & " << histoPmu_p1->Integral() << " & " << (histoPmu_p1->Integral()-histoPmu->Integral())/(histoPmu->Integral())*100. << "\\\\" << endl;
+        latexFile << "$" << GetLegendName(functionsName->at(function)) << " - 1\\sigma$ & " << histoPmu_m1->Integral() << " & " << (histoPmu_m1->Integral()-histoPmu->Integral())/(histoPmu->Integral())*100. << "\\\\" << endl;
+      }
+      
+      if (variable == 0 || variable == 1) {  // save the value of the efficiency to the LaTeX file
+        
+        double eff_nom = sel_evts_nominal/all_evts_nominal            * 100.;
+        double eff_p1  = sel_evts_p1[function]/all_evts_p1[function]  * 100.;
+        double eff_m1  = sel_evts_m1[function]/all_evts_m1[function]  * 100.;
+
+        if (function == 0) latexFile << "Nominal" << " & " << std::setprecision(4) << eff_nom << " & 0" << "\\\\" << endl;
+        latexFile << "\\midrule" << endl;
+        
+        latexFile << "$" << GetLegendName(functionsName->at(function)) << " + 1\\sigma$ & "
+        << std::setprecision(4) << eff_p1 << " & "
+        << std::setprecision(4) << (eff_p1-eff_nom)/eff_nom*100. << "\\\\" << endl;
+        
+        latexFile << "$" << GetLegendName(functionsName->at(function)) << " - 1\\sigma$ & "
+        << std::setprecision(4) << eff_m1 << " & "
+        << std::setprecision(4) << (eff_m1-eff_nom)/eff_nom*100. << "\\\\" << endl;
+      }
       
     }
     

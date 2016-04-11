@@ -33,6 +33,15 @@ class EvtWgtAnalysis {
   
   
   // Efficiency
+  
+  double all_evts_nominal = 0;  // all numu cc events (w/o selection) -> nominal values of the parameters
+  vector<double> all_evts_p1;   // all numu cc events (w/o selection) -> + 1 sigma parameters
+  vector<double> all_evts_m1;   // all numu cc events (w/o selection) -> - 1 sigma parameters
+  
+  double sel_evts_nominal = 0;  // selected numu cc events (w/o selection) -> nominal values of the parameters
+  vector<double> sel_evts_p1;   // selected numu cc events (w/o selection) -> + 1 sigma parameters
+  vector<double> sel_evts_m1;   // selected numu cc events (w/o selection) -> - 1 sigma parameters
+  
   TH1F *xsec_mom_truth = new TH1F("xsec_mom_truth", "", 10, 0, 2);
   TH1F *xsec_mom_data = new TH1F("xsec_mom_data", "", 10, 0, 2);
   TH1F *xsec_mom_bg = new TH1F("xsec_mom_bg", "", 10, 0, 2);
@@ -120,7 +129,7 @@ class EvtWgtAnalysis {
   bool inFV(double x, double y, double z);
   void MakeHistograms();
   //void MakePlotsPmu(bool normalised = false);
-  void MakeEfficiencyPlots(bool normalised = false, int variable = 0);
+  void MakePlots(bool normalised = false, int variable = 0);
   void MakeBackgroundPlots(int variable = 0);
   //void MakePlotsCosThetaMu(bool normalised = false);
   TString GetLegendName(string fName);
