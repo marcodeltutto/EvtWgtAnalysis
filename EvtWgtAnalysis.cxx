@@ -493,7 +493,7 @@ void EvtWgtAnalysis::CalcEfficiency() {
 }
 
 
-//_______________________________________
+//_______________________________________________________
 bool EvtWgtAnalysis::inFV(double x, double y, double z) {
   
   double FVx = 256.35;
@@ -504,6 +504,154 @@ bool EvtWgtAnalysis::inFV(double x, double y, double z) {
   if(x < (FVx - border) && x > border && y < (FVy/2. - border) && y > (-FVy/2. + border) && z < (FVz - border) && z > border) return true;
   else return false;
 }
+
+
+
+
+
+//_______________________________________________________
+void EvtWgtAnalysis::CalculateXSecPercDifference() {
+  
+  std::cout << "EvtWgtAnalysis::CalculateXSecPercDifference starts" << std::endl;
+  
+  std::cout << "Calling CalcEfficiency() first." << std::endl;
+  CalcEfficiency();
+  
+  // Instantiate XSec and background histograms
+  
+  XSec_pmu_nominal = new TH1D("XSec_pmu_nominal", ";p_{#mu};#propto#sigma [arb.]", 10, 0, 2);
+  background_pmu_nominal = new TH1D("background_pmu_nominal", ";p_{#mu}; Background events", 10, 0, 2);
+  
+  int nFunc = pmu_numu_cc_reco_histo_p1.size();
+  
+  TString nameBase;
+  
+  XSec_pmu_p1.resize(functionsName->size());
+  XSec_pmu_m1.resize(functionsName->size());
+  background_pmu_p1.resize(functionsName->size());
+  background_pmu_m1.resize(functionsName->size());
+  
+  for ( int j=0; j<nFunc; j++) {
+    nameBase = "XSec_pmu_";
+    XSec_pmu_p1.at(j) = new TH1D(nameBase+functionsName->at(j)+"_Plus1Sigma",  ";p_{#mu};#propto#sigma^+ [arb.]", 10, 0, 2);
+    XSec_pmu_m1.at(j) = new TH1D(nameBase+functionsName->at(j)+"_Minus1Sigma", ";p_{#mu};#propto#sigma^- [arb.]", 10, 0, 2);
+    
+    nameBase = "B_pmu_";
+    background_pmu_p1.at(j) = new TH1D(nameBase+functionsName->at(j)+"_Plus1Sigma",  ";p_{#mu};Background events", 10, 0, 2);
+    background_pmu_m1.at(j) = new TH1D(nameBase+functionsName->at(j)+"_Minus1Sigma", ";p_{#mu};Background events", 10, 0, 2);
+  }
+  
+  // Nominal background
+  
+  background_pmu_nominal -> Add(pmu_anumu_cc_reco_histo);  // anumu
+  background_pmu_nominal -> Add(pmu_nue_cc_reco_histo);  // anumu
+  background_pmu_nominal -> Add(pmu_nc_reco_histo);  // anumu
+
+  // Summing up the baground events for +-1 sigma parameters
+  // Loop over the functions
+  for ( int j=0; j<nFunc; j++) {
+    
+    background_pmu_p1.at(j) -> Add(pmu_anumu_cc_reco_histo_p1.at(j));  // anumu
+    background_pmu_p1.at(j) -> Add(pmu_nue_cc_reco_histo_p1.at(j));    // nue
+    background_pmu_p1.at(j) -> Add(pmu_nc_reco_histo_p1.at(j));        // nc
+    
+    background_pmu_m1.at(j) -> Add(pmu_anumu_cc_reco_histo_m1.at(j));  // anumu
+    background_pmu_m1.at(j) -> Add(pmu_nue_cc_reco_histo_m1.at(j));    // nue
+    background_pmu_m1.at(j) -> Add(pmu_nc_reco_histo_m1.at(j));        // nc
+
+  } // endl loop over functions
+  
+  // I now have background, efficiency and nominal events
+  // Background: background_pmu_nominal
+  //             background_pmu_p1[]
+  //             background_pmu_m1[]
+  //
+  // Efficiency: xsec_mom_eff
+  //             xsec_mom_eff_p1[]
+  //             xsec_mom_eff_m1[]
+  //
+  // Events:     pmu_numu_cc_reco_histo   (only in this case, we are assuming we take this value from data)
+  
+  // XSec: nominal
+  XSec_pmu_nominal->Add(pmu_numu_cc_reco_histo);
+  XSec_pmu_nominal->Add(background_pmu_nominal, -1);
+  XSec_pmu_nominal->Divide(xsec_mom_reco_eff);
+
+  // XSec: +- 1 sigma
+  std::cout << "Calculating cross section with efficiency as a function of *****RECO***** muon momentum." << std::endl;
+  for (int j=0; j<nFunc; j++) {
+    XSec_pmu_p1.at(j)->Add(pmu_numu_cc_reco_histo); // Nominal (taken from data)
+    XSec_pmu_p1.at(j)->Add(background_pmu_p1.at(j), -1);
+    XSec_pmu_p1.at(j)->Divide(xsec_mom_reco_eff_p1.at(j));
+    
+    XSec_pmu_m1.at(j)->Add(pmu_numu_cc_reco_histo); // Nominal (taken from data)
+    XSec_pmu_m1.at(j)->Add(background_pmu_m1.at(j), -1);
+    XSec_pmu_m1.at(j)->Divide(xsec_mom_reco_eff_m1.at(j));
+  }
+  
+  
+  
+  // Now finally calculate the percental difference between sigma and sigma^+-
+  // We want (sigma-sigma^+)/sigma   and   (sigma-sigma^-)/sigma
+  
+  XSec_pmu_percDiff_p1.resize(functionsName->size());
+  XSec_pmu_percDiff_m1.resize(functionsName->size());
+  for (int j=0; j<nFunc; j++) {
+    
+    nameBase = "xsec_pmu_percdiff_";
+    XSec_pmu_percDiff_p1.at(j) = new TH1D(nameBase+functionsName->at(j)+"_Plus1Sigma",  ";p_{#mu};Percental Difference (%)", 10, 0, 2);
+    XSec_pmu_percDiff_m1.at(j) = new TH1D(nameBase+functionsName->at(j)+"_Minus1Sigma", ";p_{#mu};Percental Difference (%)", 10, 0, 2);
+  }
+  
+  for (int j=0; j<nFunc; j++) {
+    
+    XSec_pmu_percDiff_p1.at(j)->Add(XSec_pmu_nominal);
+    XSec_pmu_percDiff_p1.at(j)->Add(XSec_pmu_p1.at(j), -1);
+    XSec_pmu_percDiff_p1.at(j)->Divide(XSec_pmu_nominal);
+    XSec_pmu_percDiff_p1.at(j)->Scale(100.);
+    
+    XSec_pmu_percDiff_m1.at(j)->Add(XSec_pmu_nominal);
+    XSec_pmu_percDiff_m1.at(j)->Add(XSec_pmu_m1.at(j), -1);
+    XSec_pmu_percDiff_m1.at(j)->Divide(XSec_pmu_nominal);
+    XSec_pmu_percDiff_m1.at(j)->Scale(100.);
+  }
+  
+
+  
+  
+  
+  
+  
+  //*********************************
+  //
+  // Save XSec to file
+  //
+  //*********************************
+  
+  TFile f = TFile("eventWeightXSec.root", "RECREATE");
+  
+  XSec_pmu_nominal->Write();
+  for (unsigned int function = 0; function < pmu_numu_cc_reco_histo_p1.size(); function++) {
+    XSec_pmu_p1.at(function)->Write();
+    XSec_pmu_m1.at(function)->Write();
+  }
+
+  
+  for (unsigned int function = 0; function < pmu_numu_cc_reco_histo_p1.size(); function++) {
+    XSec_pmu_percDiff_p1.at(function)->Write();
+    XSec_pmu_percDiff_m1.at(function)->Write();
+  }
+  
+  std::cout << "XSex percental difference histograms saved to eventWeightXSec.root" << std::endl;
+
+}
+
+
+
+
+
+
+
 
 
 //_____________________________________

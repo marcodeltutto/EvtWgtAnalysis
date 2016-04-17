@@ -113,6 +113,20 @@ class EvtWgtAnalysis {
   vector<TH1D*> pmu_nc_reco_histo_m1;
   vector<TH1D*> costhetamu_nc_reco_histo_p1;
   vector<TH1D*> costhetamu_nc_reco_histo_m1;
+  
+  
+  // Cross Section
+  TH1D *        XSec_pmu_nominal;
+  vector<TH1D*> XSec_pmu_p1;
+  vector<TH1D*> XSec_pmu_m1;
+  
+  TH1D * background_pmu_nominal;
+  vector<TH1D*> background_pmu_p1;
+  vector<TH1D*> background_pmu_m1;
+  
+  vector<TH1D*> XSec_pmu_percDiff_p1;
+  vector<TH1D*> XSec_pmu_percDiff_m1;
+  // ***
 
   
   
@@ -131,6 +145,7 @@ class EvtWgtAnalysis {
   //void MakePlotsPmu(bool normalised = false);
   void MakePlots(bool normalised = false, int variable = 0);
   void MakeBackgroundPlots(int variable = 0);
+  void CalculateXSecPercDifference();
   //void MakePlotsCosThetaMu(bool normalised = false);
   TString GetLegendName(string fName);
   void InstantiateHistograms(Int_t nFunc, vector<string> *funcName);
