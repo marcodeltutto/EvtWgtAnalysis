@@ -575,18 +575,18 @@ void EvtWgtAnalysis::CalculateXSecPercDifference() {
   // XSec: nominal
   XSec_pmu_nominal->Add(pmu_numu_cc_reco_histo);
   XSec_pmu_nominal->Add(background_pmu_nominal, -1);
-  XSec_pmu_nominal->Divide(xsec_mom_reco_eff);
+  XSec_pmu_nominal->Divide(xsec_mom_eff);
 
   // XSec: +- 1 sigma
   std::cout << "Calculating cross section with efficiency as a function of *****RECO***** muon momentum." << std::endl;
   for (int j=0; j<nFunc; j++) {
     XSec_pmu_p1.at(j)->Add(pmu_numu_cc_reco_histo); // Nominal (taken from data)
     XSec_pmu_p1.at(j)->Add(background_pmu_p1.at(j), -1);
-    XSec_pmu_p1.at(j)->Divide(xsec_mom_reco_eff_p1.at(j));
+    XSec_pmu_p1.at(j)->Divide(xsec_mom_eff_p1.at(j));
     
     XSec_pmu_m1.at(j)->Add(pmu_numu_cc_reco_histo); // Nominal (taken from data)
     XSec_pmu_m1.at(j)->Add(background_pmu_m1.at(j), -1);
-    XSec_pmu_m1.at(j)->Divide(xsec_mom_reco_eff_m1.at(j));
+    XSec_pmu_m1.at(j)->Divide(xsec_mom_eff_m1.at(j));
   }
   
   
@@ -621,8 +621,8 @@ void EvtWgtAnalysis::CalculateXSecPercDifference() {
   // Loop over all the histograms and find the abs max value for each parameter
   double maxima[4];
   for (int j=0; j<nFunc; j++) {
-    XSec_pmu_percDiff_p1.at(j)->GetXaxis()->SetRange(1,6); // To calculate maximum
-    XSec_pmu_percDiff_m1.at(j)->GetXaxis()->SetRange(1,6); // in a given range only
+    //XSec_pmu_percDiff_p1.at(j)->GetXaxis()->SetRange(2,8); // To calculate maximum
+    //XSec_pmu_percDiff_m1.at(j)->GetXaxis()->SetRange(2,8); // in a given range only
     
     maxima[0] = abs(XSec_pmu_percDiff_p1.at(j)->GetMaximum());
     maxima[1] = abs(XSec_pmu_percDiff_p1.at(j)->GetMinimum());
@@ -661,6 +661,71 @@ void EvtWgtAnalysis::CalculateXSecPercDifference() {
 
 }
 
+
+
+
+
+//________________________________________
+void EvtWgtAnalysis::MakeXsecDiffPlots() {
+
+  system("mkdir ./EvtWgtXsecDiffPlots");
+
+  // Avoid root to dislay the canvases
+  gROOT->SetBatch(kTRUE);
+
+  double loopMax;
+  loopMax = pmu_numu_cc_reco_histo_p1.size();
+
+  for (unsigned int function = 0; function < loopMax; function++) {
+
+
+
+    // First set the histograms so that I am plotting absolute values only
+    for (int bin = 1; bin < XSec_pmu_percDiff_p1.at(function)->GetNbinsX()+1; bin++) {
+
+      XSec_pmu_percDiff_p1.at(function)->SetBinContent(bin,abs(XSec_pmu_percDiff_p1.at(function)->GetBinContent(bin)));
+      XSec_pmu_percDiff_m1.at(function)->SetBinContent(bin,abs(XSec_pmu_percDiff_m1.at(function)->GetBinContent(bin)));
+
+    }
+
+
+    TCanvas *c = new TCanvas("c", "canvas", 800, 700);
+
+    c->SetBottomMargin(0.15);
+    c->SetLeftMargin(0.15);
+
+    XSec_pmu_percDiff_p1.at(function)->SetStats(0);          
+    XSec_pmu_percDiff_m1.at(function)->SetStats(0);          
+
+    XSec_pmu_percDiff_p1.at(function)->SetLineColor(kRed+1);
+    XSec_pmu_percDiff_m1.at(function)->SetLineColor(kGreen+1);
+
+    XSec_pmu_percDiff_p1.at(function)->GetXaxis()->SetTitle("p_{#mu} [GeV]");
+    XSec_pmu_percDiff_p1.at(function)->GetXaxis()->CenterTitle();
+    //XSec_pmu_percDiff_p1.at(function)->GetXaxis()->SetTitleSize(25);
+    //XSec_pmu_percDiff_p1.at(function)->GetXaxis()->SetTitleFont(43);
+    XSec_pmu_percDiff_p1.at(function)->GetXaxis()->SetTitleOffset(1.0);
+
+    XSec_pmu_percDiff_p1.at(function)->GetYaxis()->SetTitle("|Percental difference| [%]");
+    XSec_pmu_percDiff_p1.at(function)->GetYaxis()->CenterTitle();
+    //XSec_pmu_percDiff_p1.at(function)->GetYaxis()->SetTitleSize(25);
+    //XSec_pmu_percDiff_p1.at(function)->GetYaxis()->SetTitleFont(43);
+    XSec_pmu_percDiff_p1.at(function)->GetYaxis()->SetTitleOffset(1.0);
+    XSec_pmu_percDiff_p1.at(function)->GetYaxis()->SetNdivisions(516); 
+    
+    XSec_pmu_percDiff_p1.at(function)->Draw();
+    XSec_pmu_percDiff_m1.at(function)->Draw("same");
+
+    TString SaveName;
+    SaveName = "Pmu_"+functionsName->at(function);
+
+    c->SetGridy();
+
+    c->Print("./EvtWgtXsecDiffPlots/" + SaveName + ".C");
+    c->Print("./EvtWgtXsecDiffPlots/" + SaveName + ".pdf");
+
+  } // end loop functions
+}
 
 
 

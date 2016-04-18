@@ -146,6 +146,7 @@ class EvtWgtAnalysis {
   void MakePlots(bool normalised = false, int variable = 0);
   void MakeBackgroundPlots(int variable = 0);
   void CalculateXSecPercDifference();
+  void MakeXsecDiffPlots();
   //void MakePlotsCosThetaMu(bool normalised = false);
   TString GetLegendName(string fName);
   void InstantiateHistograms(Int_t nFunc, vector<string> *funcName);
