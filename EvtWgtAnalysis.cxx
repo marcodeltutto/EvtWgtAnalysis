@@ -618,7 +618,22 @@ void EvtWgtAnalysis::CalculateXSecPercDifference() {
   
 
   
-  
+  // Loop over all the histograms and find the abs max value for each parameter
+  double maxima[4];
+  for (int j=0; j<nFunc; j++) {
+    XSec_pmu_percDiff_p1.at(j)->GetXaxis()->SetRange(1,6); // To calculate maximum
+    XSec_pmu_percDiff_m1.at(j)->GetXaxis()->SetRange(1,6); // in a given range only
+    
+    maxima[0] = abs(XSec_pmu_percDiff_p1.at(j)->GetMaximum());
+    maxima[1] = abs(XSec_pmu_percDiff_p1.at(j)->GetMinimum());
+    maxima[2] = abs(XSec_pmu_percDiff_m1.at(j)->GetMaximum());
+    maxima[3] = abs(XSec_pmu_percDiff_m1.at(j)->GetMinimum());
+    
+    double thisMax = *std::max_element(maxima, maxima+4);
+    std::cout << "Func: " << GetLegendName(functionsName->at(j)) << "  Max: " << thisMax << std::endl;
+    
+  }
+
   
   
   
@@ -933,7 +948,7 @@ void EvtWgtAnalysis::InstantiateHistograms(Int_t nFunc, vector<string> *funcName
 
 
 
-//__________________________________________
+//______________________________________________________
 void EvtWgtAnalysis::MakeBackgroundPlots(int variable) {
   
   // Pmu: variable == 0
@@ -1316,9 +1331,9 @@ void EvtWgtAnalysis::MakePlots(bool normalised, int variable) {
     TH1F *histoPmu_m1;
     
     if (variable == 0) {  // Pmu
-      histoPmu    = (TH1F*)xsec_mom_eff->Clone("histoPmu");
-      histoPmu_p1 = (TH1F*)xsec_mom_eff_p1.at(function)->Clone("histoPmu_p1");
-      histoPmu_m1 = (TH1F*)xsec_mom_eff_m1.at(function)->Clone("histoPmu_m1");
+      histoPmu    = (TH1F*)xsec_mom_reco_eff->Clone("histoPmu");
+      histoPmu_p1 = (TH1F*)xsec_mom_reco_eff_p1.at(function)->Clone("histoPmu_p1");
+      histoPmu_m1 = (TH1F*)xsec_mom_reco_eff_m1.at(function)->Clone("histoPmu_m1");
     }
     else if (variable == 1) { // CosThetaMu
       histoPmu    = (TH1F*)xsec_theta_eff->Clone("histoPmu");
@@ -1420,7 +1435,7 @@ void EvtWgtAnalysis::MakePlots(bool normalised, int variable) {
     pad1->Draw();             // Draw the upper pad: pad1
     pad1->cd();               // pad1 becomes the current pad
     histoPmu_p1->SetMinimum(0.0001); // Otherwise 0 label overlaps
-    if (variable == 0 || variable == 1) histoPmu_p1->SetMaximum(0.5);
+    if (variable == 0 || variable == 1) histoPmu_p1->SetMaximum(0.9);
     histoPmu_p1->SetStats(0);          // No statistics on upper plot
     histoPmu_m1->SetStats(0);          // No statistics on upper plot
     histoPmu->SetStats(0);          // No statistics on upper plot
@@ -1623,7 +1638,7 @@ void EvtWgtAnalysis::MakePlots(bool normalised, int variable) {
 
 
 
-//________________________________________________
+//___________________________________________________
 TString EvtWgtAnalysis::GetLegendName(string fName) {
   
   TString legName = "null";
