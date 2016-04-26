@@ -132,7 +132,11 @@ class EvtWgtAnalysis {
   
   
   TH1D *temp = new TH1D("temp", "", 100, 0,100);
-  int Ncoh = 0; // number of Coherent production interactions
+  int Nnumucc = 0; // number of numu cc events
+  int Ncoh    = 0; // number of Coherent Production interactions
+  int Ndis    = 0; // number of Deep Inelastic scattering interactions
+  TH1D *weightNmfp = new TH1D("weightNmfp", "", 5000, -100,100);
+
   
   TChain *cflux;
   

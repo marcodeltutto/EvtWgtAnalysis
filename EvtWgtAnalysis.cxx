@@ -509,7 +509,7 @@ bool EvtWgtAnalysis::inFV(double x, double y, double z) {
 
 
 
-//_______________________________________________________
+//__________________________________________________
 void EvtWgtAnalysis::CalculateXSecPercDifference() {
   
   std::cout << "EvtWgtAnalysis::CalculateXSecPercDifference starts" << std::endl;
@@ -578,7 +578,7 @@ void EvtWgtAnalysis::CalculateXSecPercDifference() {
   XSec_pmu_nominal->Divide(xsec_mom_eff);
 
   // XSec: +- 1 sigma
-  std::cout << "Calculating cross section with efficiency as a function of *****RECO***** muon momentum." << std::endl;
+  std::cout << "Calculating cross section with efficiency as a function of *****TRUE***** muon momentum." << std::endl;
   for (int j=0; j<nFunc; j++) {
     XSec_pmu_p1.at(j)->Add(pmu_numu_cc_reco_histo); // Nominal (taken from data)
     XSec_pmu_p1.at(j)->Add(background_pmu_p1.at(j), -1);
@@ -668,7 +668,29 @@ void EvtWgtAnalysis::CalculateXSecPercDifference() {
 //________________________________________
 void EvtWgtAnalysis::MakeXsecDiffPlots() {
 
+  if (xsec_mom_truth_p1.size() == 0) {
+    std::cout << "Calling EvtWgtAnalysis::CalculateXSecPercDifference() first." << std::endl;
+    CalculateXSecPercDifference();
+  }
+
   system("mkdir ./EvtWgtXsecDiffPlots");
+
+  // Open LaTeX file
+  bool makeLaTeX = true;
+  ofstream latexFile;
+  if (makeLaTeX){
+    latexFile.open("./EvtWgtXsecDiffPlots/evtwgtXsecDiffPmu.tex");
+    latexFile << "\\begin{table}[]" << endl;
+    latexFile << "\\caption{evtwgtXsecDiffPmu}" << endl;
+    latexFile << "\\captionsetup{format=hang,labelfont={sf,bf}}" << endl;
+    latexFile << "\\label{tab:}" << endl;
+    latexFile << "\\centering" << endl;
+    latexFile << "\\begin{tabular}{c c c}" << endl;
+    latexFile << "\\toprule" << endl;
+    latexFile << "  &  Cross-section percental   &    $\\sqrt{S+B}/S$              \\\\" << endl;
+    latexFile << "  &  difference (\\%)          &    @ $6.6\\times 10^{20}$ POT   \\\\" << endl;
+    latexFile << "\\midrule" << endl;
+  }
 
   // Avoid root to dislay the canvases
   gROOT->SetBatch(kTRUE);
@@ -676,24 +698,120 @@ void EvtWgtAnalysis::MakeXsecDiffPlots() {
   double loopMax;
   loopMax = pmu_numu_cc_reco_histo_p1.size();
 
+
+  vector<TH1D*> XSec_pmu_percDiff_max;
+  XSec_pmu_percDiff_max.resize(loopMax);
+  TString nameBase;
+  for (unsigned int function = 0; function < loopMax; function++) {
+    nameBase = "xsec_pmu_percDiff_max_";
+    XSec_pmu_percDiff_max.at(function) = new TH1D(nameBase+functionsName->at(function)+"_max",  ";p_{#mu};#propto#sigma^+ [arb.]", 10, 0, 2);
+  }
+
+  vector<bool> binMax; // This vector contains bin by bin info
+                       // true: in this bin Plus1 is bigger
+                       // flase: in this bin Minus1 is bigger
+
   for (unsigned int function = 0; function < loopMax; function++) {
 
-
+    binMax.resize(XSec_pmu_percDiff_p1.at(function)->GetNbinsX());
 
     // First set the histograms so that I am plotting absolute values only
     for (int bin = 1; bin < XSec_pmu_percDiff_p1.at(function)->GetNbinsX()+1; bin++) {
 
+      // First set the histograms so that I am plotting absolute values only
       XSec_pmu_percDiff_p1.at(function)->SetBinContent(bin,abs(XSec_pmu_percDiff_p1.at(function)->GetBinContent(bin)));
       XSec_pmu_percDiff_m1.at(function)->SetBinContent(bin,abs(XSec_pmu_percDiff_m1.at(function)->GetBinContent(bin)));
-
+     
+      // Now fill XSec_pmu_percDiff_max with the maximum between the two prevous histograms
+      if (XSec_pmu_percDiff_p1.at(function)->GetBinContent(bin) > XSec_pmu_percDiff_m1.at(function)->GetBinContent(bin)){
+        binMax[bin] = true;
+        XSec_pmu_percDiff_max.at(function)->SetBinContent(bin, XSec_pmu_percDiff_p1.at(function)->GetBinContent(bin));
+      } else {
+        binMax[bin] = false;
+        XSec_pmu_percDiff_max.at(function)->SetBinContent(bin, XSec_pmu_percDiff_m1.at(function)->GetBinContent(bin));
+      }
     }
 
+    XSec_pmu_percDiff_max.at(function)->GetXaxis()->SetRange(2,8);
+    double uncert = XSec_pmu_percDiff_max.at(function)->GetMaximum();
+    double maxBin = XSec_pmu_percDiff_max.at(function)->GetMaximumBin();
+    XSec_pmu_percDiff_max.at(function)->GetXaxis()->SetRange(1,10);
 
+    // Calulate sqrt(S+B)/S
+
+    double POTscale = 5.3e19/2.43000e20;
+    POTscale = 6.6e20/2.43000e20;
+    std::cout << "******************* You are using 6.6e20 to scale. ===> Scale Factor: " << POTscale << std::endl;
+    double S = pmu_numu_cc_reco_histo->Integral() * POTscale;
+    double B = background_pmu_nominal->Integral() * POTscale;
+    
+    TH1D * scoreFunction = new TH1D("scoreFunction",  ";p_{#mu};#sqrt{S+B}/S", 10, 0, 2);
+    
+    for (int bin = 1; bin < pmu_numu_cc_reco_histo->GetNbinsX()+1; bin++) {
+      S = pmu_numu_cc_reco_histo->GetBinContent(bin) * POTscale;
+      B = background_pmu_nominal->GetBinContent(bin) * POTscale;
+      if (S == 0) {
+        scoreFunction->SetBinContent(bin,0);
+      }
+      else
+        scoreFunction->SetBinContent(bin,sqrt(S+B)/S*100);
+    }
+    
+    TFile tempFile = TFile("temp.root", "RECREATE");
+    scoreFunction->Write();
+    //t.Close();
+    
+
+    
+    
+/*
+    if (binMax[maxBin])
+      B = background_pmu_p1->Integral() * POTscale;
+    else
+      B = background_pmu_m1->Integral() * POTscale;
+
+    std::cout << GetLegendName(functionsName->at(function)) << sqrt(S+B)/S*100. << std::endl;
+*/
+
+    // Make the table now
+    if (makeLaTeX){
+      latexFile << " $ " << GetLegendName(functionsName->at(function)) 
+                << " $ & " << uncert 
+                << " &   " << scoreFunction->GetBinContent(maxBin) << " \\\\ " << endl;
+    }
+   
+
+
+
+
+    // Make the plots now
     TCanvas *c = new TCanvas("c", "canvas", 800, 700);
 
     c->SetBottomMargin(0.15);
     c->SetLeftMargin(0.15);
 
+    XSec_pmu_percDiff_max.at(function)->SetStats(0);   
+    XSec_pmu_percDiff_max.at(function)->SetLineColor(kRed+1);
+    XSec_pmu_percDiff_max.at(function)->GetXaxis()->SetTitle("p_{#mu} [GeV]");
+    XSec_pmu_percDiff_max.at(function)->GetXaxis()->CenterTitle();
+    //XSec_pmu_percDiff_max.at(function)->GetXaxis()->SetTitleSize(25);
+    //XSec_pmu_percDiff_max.at(function)->GetXaxis()->SetTitleFont(43);
+    XSec_pmu_percDiff_max.at(function)->GetXaxis()->SetTitleOffset(1.1);
+    XSec_pmu_percDiff_max.at(function)->GetYaxis()->SetTitle("Percentage [%]");//("|Percental difference| [%]");
+    XSec_pmu_percDiff_max.at(function)->GetYaxis()->CenterTitle();
+    //XSec_pmu_percDiff_max.at(function)->GetYaxis()->SetTitleSize(25);
+    //XSec_pmu_percDiff_max.at(function)->GetYaxis()->SetTitleFont(43);
+    XSec_pmu_percDiff_max.at(function)->GetYaxis()->SetTitleOffset(1.1);
+    XSec_pmu_percDiff_max.at(function)->GetYaxis()->SetNdivisions(516);
+    XSec_pmu_percDiff_max.at(function)->Draw();
+    
+    scoreFunction->SetLineColor(9);
+    scoreFunction->Draw("same");
+
+
+
+
+/*
     XSec_pmu_percDiff_p1.at(function)->SetStats(0);          
     XSec_pmu_percDiff_m1.at(function)->SetStats(0);          
 
@@ -715,6 +833,50 @@ void EvtWgtAnalysis::MakeXsecDiffPlots() {
     
     XSec_pmu_percDiff_p1.at(function)->Draw();
     XSec_pmu_percDiff_m1.at(function)->Draw("same");
+*/
+
+      double x = 0.9;
+      double y = 0.95;
+      double size = 35;//28;
+      int color = kRed+1;
+      int font = 43;
+      int align = 32;
+      TString LaTeXname = GetLegendName(functionsName->at(function));
+      TLatex *latex = new TLatex( x, y, LaTeXname);
+      latex->SetNDC();
+      latex->SetTextSize(size);
+      latex->SetTextColor(color);
+      latex->SetTextFont(font);
+      latex->SetTextAlign(align);
+
+      latex->Draw();
+
+
+    TLegend* leg= new TLegend(0.1829574,0.648368,0.5639098,0.8486647,NULL,"brNDC");
+ 
+    leg->SetTextFont(42);
+    leg->SetBorderSize(0);
+    leg->SetTextSize(0.04154303);
+
+    leg->SetX1(0.1541353);
+    leg->SetX2(0.5526316);
+    leg->SetY1(0.9080119);
+    leg->SetY2(0.9792285);
+
+    leg->SetNColumns(2);
+
+    leg->AddEntry(XSec_pmu_percDiff_max.at(function),  "|(#sigma-#sigma^{#pm})/#sigma|");
+    leg->AddEntry(scoreFunction,                       "#sqrt{S+B}/S");
+    leg->SetNColumns(2);
+
+
+    leg->Draw();
+    leg->SetNColumns(2);
+
+    //leg->SetX1(0.1829574);
+    //leg->SetX2(0.5639098);
+    //leg->SetY1(0.648368);
+    //leg->SetY2(0.8486647);
 
     TString SaveName;
     SaveName = "Pmu_"+functionsName->at(function);
@@ -725,6 +887,12 @@ void EvtWgtAnalysis::MakeXsecDiffPlots() {
     c->Print("./EvtWgtXsecDiffPlots/" + SaveName + ".pdf");
 
   } // end loop functions
+
+  if (makeLaTeX) {
+    latexFile << "\\bottomrule" << endl;
+    latexFile << "\\end{tabular}" << endl;
+    latexFile << "\\end{table}" << endl;
+  }
 }
 
 
@@ -784,14 +952,20 @@ void EvtWgtAnalysis::MakeHistograms() {
     
     // Select cc/nc and neutrino type
     if (anaBNBtree->ccnc_truth[0] == 0 && anaBNBtree->nuPDG_truth[0] == 14) {  // CC and numu
+      Nnumucc++;
+      for (int f = 0; f < anaBNBtree->evtwgt_nfunc; f++) {
+        if (anaBNBtree->evtwgt_funcname->at(f).find("genie_IntraNukeNmfp_Genie"))
+          weightNmfp->Fill((anaBNBtree->evtwgt_weight->at(f)).at(0));
+      }
       if (anaBNBtree->mode_truth[0] == 3) Ncoh++;
+      if (anaBNBtree->mode_truth[0] == 2) Ndis++;
       // Loop over GENIE particles
       for (int GENIEparticle = 0; GENIEparticle < anaBNBtree->genie_no_primaries; GENIEparticle++) {
         // Look for muon
         if (anaBNBtree->genie_primaries_pdg[GENIEparticle] == 14-1 && anaBNBtree->genie_status_code[GENIEparticle]==1) {
           // Loop over the reweighting functions
           for (int function = 0; function < anaBNBtree->evtwgt_nfunc; function++) {
-            if (anaBNBtree->evtwgt_funcname->at(function) == "genie_coh_Genie") temp->Fill((anaBNBtree->evtwgt_weight->at(function)).at(0));
+            if (anaBNBtree->evtwgt_funcname->at(function) == "genie_DISAth_Genie") temp->Fill((anaBNBtree->evtwgt_weight->at(function)).at(0));
             histoPmuVec[function]->Fill(anaBNBtree->genie_P[GENIEparticle]);
             histoPmuVec_p1[function]->Fill(anaBNBtree->genie_P[GENIEparticle], (anaBNBtree->evtwgt_weight->at(function)).at(0));
             histoPmuVec_m1[function]->Fill(anaBNBtree->genie_P[GENIEparticle], (anaBNBtree->evtwgt_weight->at(function)).at(1));
@@ -802,15 +976,19 @@ void EvtWgtAnalysis::MakeHistograms() {
           } // end loop over reweighting functions
         } // end muon if
       } // end loop GENIE particle
-    } // end of loop over entries
-  } // end cc/nc and neutrino type selection
+    } // end cc/nc and neutrino type selection
+  } // end of loop over entries
   std::cout << "Loop completed. Saving to eventWeightHistograms.root now." << std::endl;
-  
-  std::cout << "Number of Coherent production interactions: " << Ncoh << std::endl;
-  
+ 
+  std::cout << "Number of numu cc events:                               " << Nnumucc << std::endl;                  
+  std::cout << "  > Number of Coherent Production interactions:         " << Ncoh    << std::endl;
+  std::cout << "  > Number of Deep Inelastinc Scattering  interactions: " << Ndis    << std::endl; 
+
+ 
   // Save to file
   TFile f = TFile("eventWeightHistograms.root", "RECREATE");
   temp->Write();
+  weightNmfp->Write();
   for (unsigned int j=0; j<histoPmuVec.size(); j++) {
     histoPmuVec[j]->Write();
     histoPmuVec_p1[j]->Write();
