@@ -685,10 +685,10 @@ void EvtWgtAnalysis::MakeXsecDiffPlots() {
     latexFile << "\\captionsetup{format=hang,labelfont={sf,bf}}" << endl;
     latexFile << "\\label{tab:}" << endl;
     latexFile << "\\centering" << endl;
-    latexFile << "\\begin{tabular}{c c c}" << endl;
+    latexFile << "\\begin{tabular}{c c c c}" << endl;
     latexFile << "\\toprule" << endl;
-    latexFile << "  &  Cross-section percental   &    $\\sqrt{S+B}/S$              \\\\" << endl;
-    latexFile << "  &  difference (\\%)          &    @ $6.6\\times 10^{20}$ POT   \\\\" << endl;
+    latexFile << "  &  Cross-section percental   &    $\\sqrt{S+B}/S$             &   $\\sqrt{S+B}/S$ \\\\"            << endl;
+    latexFile << "  &  difference (\\%)          &    @ $6.6\\times 10^{20}$ POT  &   @ $0.5\\times 10^{20}$ POT \\\\" << endl;
     latexFile << "\\midrule" << endl;
   }
 
@@ -745,20 +745,33 @@ void EvtWgtAnalysis::MakeXsecDiffPlots() {
     double S = pmu_numu_cc_reco_histo->Integral() * POTscale;
     double B = background_pmu_nominal->Integral() * POTscale;
     
-    TH1D * scoreFunction = new TH1D("scoreFunction",  ";p_{#mu};#sqrt{S+B}/S", 10, 0, 2);
-    
+    double POTscale_2 = 0.5e20/2.43000e20;
+    double S_2 = pmu_numu_cc_reco_histo->Integral() * POTscale;
+    double B_2 = background_pmu_nominal->Integral() * POTscale;
+
+    TH1D * scoreFunction   = new TH1D("scoreFunctionAT6Point6e20POT",  ";p_{#mu};#sqrt{S+B}/S", 10, 0, 2);
+    TH1D * scoreFunction_2 = new TH1D("scoreFunctionAT0Point5e20POT",  ";p_{#mu};#sqrt{S+B}/S", 10, 0, 2);    
+
     for (int bin = 1; bin < pmu_numu_cc_reco_histo->GetNbinsX()+1; bin++) {
       S = pmu_numu_cc_reco_histo->GetBinContent(bin) * POTscale;
       B = background_pmu_nominal->GetBinContent(bin) * POTscale;
+      S_2 = pmu_numu_cc_reco_histo->GetBinContent(bin) * POTscale_2;
+      B_2 = background_pmu_nominal->GetBinContent(bin) * POTscale_2;
       if (S == 0) {
         scoreFunction->SetBinContent(bin,0);
       }
       else
         scoreFunction->SetBinContent(bin,sqrt(S+B)/S*100);
+      if (S_2 == 0) {
+        scoreFunction_2->SetBinContent(bin,0);
+      }
+      else
+        scoreFunction_2->SetBinContent(bin,sqrt(S_2+B_2)/S_2*100);
     }
     
     TFile tempFile = TFile("temp.root", "RECREATE");
     scoreFunction->Write();
+    scoreFunction_2->Write();
     //t.Close();
     
 
@@ -777,7 +790,8 @@ void EvtWgtAnalysis::MakeXsecDiffPlots() {
     if (makeLaTeX){
       latexFile << " $ " << GetLegendName(functionsName->at(function)) 
                 << " $ & " << uncert 
-                << " &   " << scoreFunction->GetBinContent(maxBin) << " \\\\ " << endl;
+                << " &   " << scoreFunction->GetBinContent(maxBin) 
+                << " &   " << scoreFunction_2->GetBinContent(maxBin) << " \\\\ " << endl;
     }
    
 
@@ -789,6 +803,10 @@ void EvtWgtAnalysis::MakeXsecDiffPlots() {
 
     c->SetBottomMargin(0.15);
     c->SetLeftMargin(0.15);
+    c->SetLogy();
+
+    XSec_pmu_percDiff_max.at(function)->SetMinimum(0.05);
+    XSec_pmu_percDiff_max.at(function)->SetMaximum(100.);
 
     XSec_pmu_percDiff_max.at(function)->SetStats(0);   
     XSec_pmu_percDiff_max.at(function)->SetLineColor(kRed+1);
@@ -808,7 +826,8 @@ void EvtWgtAnalysis::MakeXsecDiffPlots() {
     scoreFunction->SetLineColor(9);
     scoreFunction->Draw("same");
 
-
+    scoreFunction_2->SetLineColor(8);
+    scoreFunction_2->Draw("same");
 
 
 /*
@@ -856,22 +875,23 @@ void EvtWgtAnalysis::MakeXsecDiffPlots() {
  
     leg->SetTextFont(42);
     leg->SetBorderSize(0);
-    leg->SetTextSize(0.04154303);
+    leg->SetTextSize(0.02967359);
 
-    leg->SetX1(0.1541353);
-    leg->SetX2(0.5526316);
-    leg->SetY1(0.9080119);
-    leg->SetY2(0.9792285);
+    leg->SetX1(0.179198);
+    leg->SetX2(0.4924812);
+    leg->SetY1(0.7091988);
+    leg->SetY2(0.8531157);
 
-    leg->SetNColumns(2);
+    //leg->SetNColumns(3);
 
     leg->AddEntry(XSec_pmu_percDiff_max.at(function),  "|(#sigma-#sigma^{#pm})/#sigma|");
-    leg->AddEntry(scoreFunction,                       "#sqrt{S+B}/S");
-    leg->SetNColumns(2);
+    leg->AddEntry(scoreFunction,                       "Stat. @ 6.6e20 POT");
+    leg->AddEntry(scoreFunction_2,                     "Stat. @ 0.5e20 POT");
+    //leg->SetNColumns(2);
 
 
     leg->Draw();
-    leg->SetNColumns(2);
+    //leg->SetNColumns(2);
 
     //leg->SetX1(0.1829574);
     //leg->SetX2(0.5639098);
