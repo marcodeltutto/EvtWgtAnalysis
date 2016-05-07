@@ -30,7 +30,7 @@ root -l
 > f.MakeBackgroundPlots();
 ```
 
-To make the Number of Events or efficiency plots:as a function of pMu plots:
+To make the Number of Events or efficiency plots:
 ```
 > f.MakePlots(false, option);
 ```
@@ -67,7 +67,7 @@ Change file path in makeClass.C first, then:
 cd AnaTree
 root -l makeClass.C
 root -l
-.L AnaBNB.C+
+> .L AnaBNB.C+
 ```
 
 
