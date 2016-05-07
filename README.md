@@ -18,6 +18,8 @@ root -l
 
 ##Run
 
+It works with `root v5_34_32`.
+
 ```
 source SetupEvtWgtAnalysis.sh
 
@@ -28,12 +30,34 @@ root -l
 > f.MakeBackgroundPlots();
 ```
 
-or use the python script:
+To make the Number of Events or efficiency plots:as a function of pMu plots:
+```
+> f.MakePlots(false, option);
+```
 
+where `option` is an `integer`:
+- `option=0`: efficiency - Pmu
+- `option=1`: efficiency - CosThetaMu
+- `option=2`: events - Pmu
+- `option=3`: events - CosThetaMu
+
+Change `false` to `true` to have area normalized plots.
+
+
+To make the plots that show the events after the selection and the background decomposition:
 ```
-source SetupEvtWgtAnalysis.sh
-python RunEvtWgtAnalysis.py
+> MakeBackgroundPlots(option)
 ```
+
+where `option` is an `integer`:
+- `option=0`: as a function of Pmu
+- `option=1`: as a function of CosThetaMu
+
+To make the plots that show the cross-section percental difference:
+```
+> MakeXsecDiffPlots()
+```
+
 
 ##Generate new AnaBNB_C.so 
 
