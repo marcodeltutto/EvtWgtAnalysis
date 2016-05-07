@@ -6,8 +6,8 @@ Code to study GENIE model uncertainties at MicroBooNE.
 ```
 cd AnaTree
 root -l
-.L AnaBNB.C+
-.q
+> .L AnaBNB.C+
+> .q
 cd ..
 root -l
 > gSystem->Load("AnaTree/AnaBNB_C.so");
