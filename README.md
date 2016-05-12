@@ -26,7 +26,7 @@ source SetupEvtWgtAnalysis.sh
 root -l
 > gSystem->Load("AnaTree/AnaBNB_C.so");
 > gSystem->Load("EvtWgtAnalysis_cxx.so");
-> EvtWgtAnalysis t("generic_*_to_anatree.root");
+> EvtWgtAnalysis f("generic_*_to_anatree.root");
 > f.MakeBackgroundPlots();
 ```
 
@@ -46,7 +46,7 @@ Change `false` to `true` to have area normalized plots.
 
 To make the plots that show the events after the selection and the background decomposition:
 ```
-> MakeBackgroundPlots(option)
+> f.MakeBackgroundPlots(option)
 ```
 
 where `option` is an `integer`:
@@ -55,7 +55,7 @@ where `option` is an `integer`:
 
 To make the plots that show the cross-section percental difference:
 ```
-> MakeXsecDiffPlots()
+> f.MakeXsecDiffPlots()
 ```
 
 
