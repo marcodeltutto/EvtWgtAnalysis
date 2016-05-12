@@ -1226,7 +1226,8 @@ void EvtWgtAnalysis::MakeBackgroundPlots(int variable) {
   
   // Create output directory
   system("mkdir ./EvtWgtBackgroundPlots");
-  
+  system("mkdir ./EvtWgtBackgroundPlots_reducedLegend"); 
+ 
   // Avoid root to dislay the canvases
   gROOT->SetBatch(kTRUE);
   
@@ -1441,8 +1442,46 @@ void EvtWgtAnalysis::MakeBackgroundPlots(int variable) {
     c->Print("./EvtWgtBackgroundPlots/" + SaveName + ".C");
     c->Print("./EvtWgtBackgroundPlots/" + SaveName + ".pdf");
     
-    
-    
+
+    // Reduced Legend Plots
+    histo_numu->GetXaxis()->SetTitleOffset(1.10);
+    histo_numu->GetYaxis()->SetTitleOffset(1.30);
+    histo_numu->GetXaxis()->SetTitleSize(30);
+    histo_numu->GetYaxis()->SetTitleSize(30);
+
+    histo_numu  ->Draw();
+    histo_anumu ->Draw("same");
+    histo_nue   ->Draw("same");
+    histo_nc    ->Draw("same");
+    histo_numu_p1  ->Draw("same");
+    histo_anumu_p1 ->Draw("same");
+    histo_nue_p1   ->Draw("same");
+    histo_nc_p1    ->Draw("same");
+
+    histo_numu_m1  ->Draw("same");
+    histo_anumu_m1 ->Draw("same");
+    histo_nue_m1   ->Draw("same");
+    histo_nc_m1    ->Draw("same");
+
+    TLegend* leg2;
+    if (variable == 0) leg2 = new TLegend(0.566416,0.5535484,0.8822055,0.8825806,NULL,"brNDC");
+    if (variable == 1) leg2 = new TLegend(0.1679198,0.5367742,0.4837093,0.8658065,NULL,"brNDC");
+    leg2->SetTextFont(42);
+    leg2->SetBorderSize(0);
+
+    leg2->AddEntry(histo_numu,  "#nu_{#mu} CC");
+    leg2->AddEntry(histo_anumu, "#bar{#nu}_{#mu} CC");
+    leg2->AddEntry(histo_nue,   "#nu_{e}, #bar{#nu}_{e} CC");
+    leg2->AddEntry(histo_nc,    "NC all flavours");
+
+    leg2->Draw();
+
+    c->Print("./EvtWgtBackgroundPlots_reducedLegend/" + SaveName + ".C");
+    c->Print("./EvtWgtBackgroundPlots_reducedLegend/" + SaveName + ".pdf");
+
+
+
+
     double numu_p1;
     double numu_m1;
     double anumu_p1;
