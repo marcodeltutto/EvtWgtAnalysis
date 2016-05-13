@@ -678,6 +678,7 @@ void EvtWgtAnalysis::MakeXsecDiffPlots() {
   // Open LaTeX file
   bool makeLaTeX = true;
   ofstream latexFile;
+  ofstream latexFile2;
   if (makeLaTeX){
     latexFile.open("./EvtWgtXsecDiffPlots/evtwgtXsecDiffPmu.tex");
     latexFile << "\\begin{table}[]" << endl;
@@ -690,6 +691,18 @@ void EvtWgtAnalysis::MakeXsecDiffPlots() {
     latexFile << "  &  Cross-section percental   &    $\\sqrt{S+B}/S$             &   $\\sqrt{S+B}/S$ \\\\"            << endl;
     latexFile << "  &  difference (\\%)          &    @ $6.6\\times 10^{20}$ POT  &   @ $0.5\\times 10^{20}$ POT \\\\" << endl;
     latexFile << "\\midrule" << endl;
+
+    latexFile2.open("./EvtWgtXsecDiffPlots/evtwgtXsecDiffPmu_technote.tex");
+    latexFile2 << "\\begin{table}[]" << endl;
+    latexFile2 << "\\caption{evtwgtXsecDiffPmu}" << endl;
+    latexFile2 << "\\captionsetup{format=hang,labelfont={sf,bf}}" << endl;
+    latexFile2 << "\\label{tab:}" << endl;
+    latexFile2 << "\\centering" << endl;
+    latexFile2 << "\\begin{tabular}{c c c}" << endl;
+    latexFile2 << "\\toprule" << endl;
+    latexFile2 << "  &  \\multicolumn{2}{c}{Cross-section percental difference}  \\\\"            << endl;
+    latexFile2 << "  &  at maximum point  &  at cross-section peak               \\\\"            << endl;
+    latexFile2 << "\\midrule" << endl;
   }
 
   // Avoid root to dislay the canvases
@@ -732,8 +745,12 @@ void EvtWgtAnalysis::MakeXsecDiffPlots() {
       }
     }
 
+    // Find the bin where the cross-section in bigger
+    int xsec_max_point_bin = pmu_numu_cc_reco_histo->GetMaximumBin();
+
     XSec_pmu_percDiff_max.at(function)->GetXaxis()->SetRange(2,8);
     double uncert = XSec_pmu_percDiff_max.at(function)->GetMaximum();
+    double uncertAtXSecPeak = XSec_pmu_percDiff_max.at(function)->GetBinContent(xsec_max_point_bin);
     double maxBin = XSec_pmu_percDiff_max.at(function)->GetMaximumBin();
     XSec_pmu_percDiff_max.at(function)->GetXaxis()->SetRange(1,10);
 
@@ -786,12 +803,17 @@ void EvtWgtAnalysis::MakeXsecDiffPlots() {
     std::cout << GetLegendName(functionsName->at(function)) << sqrt(S+B)/S*100. << std::endl;
 */
 
+
     // Make the table now
     if (makeLaTeX){
       latexFile << " $ " << GetLegendName(functionsName->at(function)) 
                 << " $ & " << uncert 
                 << " &   " << scoreFunction->GetBinContent(maxBin) 
                 << " &   " << scoreFunction_2->GetBinContent(maxBin) << " \\\\ " << endl;
+
+      latexFile2 << " $ " << GetLegendName(functionsName->at(function))
+                 << " $ & " << uncert
+                 << " & " << uncertAtXSecPeak << " \\\\ " << endl;
     }
    
 
@@ -906,12 +928,21 @@ void EvtWgtAnalysis::MakeXsecDiffPlots() {
     c->Print("./EvtWgtXsecDiffPlots/" + SaveName + ".C");
     c->Print("./EvtWgtXsecDiffPlots/" + SaveName + ".pdf");
 
+    if (function == loopMax-1) { // If we are at the end of the loop save stats.
+      latexFile2 << "Stat. @ 0.5e20 POT & - & " << scoreFunction_2->GetBinContent(xsec_max_point_bin) << " \\\\" << std::endl;
+      latexFile2 << "Stat. @ 6.6e20 POT & - & " << scoreFunction->GetBinContent(xsec_max_point_bin) << " \\\\" << std::endl;
+    }
+
   } // end loop functions
 
   if (makeLaTeX) {
     latexFile << "\\bottomrule" << endl;
     latexFile << "\\end{tabular}" << endl;
     latexFile << "\\end{table}" << endl;
+
+    latexFile2 << "\\bottomrule" << endl;
+    latexFile2 << "\\end{tabular}" << endl;
+    latexFile2 << "\\end{table}" << endl;
   }
 }
 
