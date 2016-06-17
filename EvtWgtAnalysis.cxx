@@ -1664,9 +1664,9 @@ void EvtWgtAnalysis::MakePlots(bool normalised, int variable) {
     TH1F *histoPmu_m1;
     
     if (variable == 0) {  // Pmu
-      histoPmu    = (TH1F*)xsec_mom_reco_eff->Clone("histoPmu");
-      histoPmu_p1 = (TH1F*)xsec_mom_reco_eff_p1.at(function)->Clone("histoPmu_p1");
-      histoPmu_m1 = (TH1F*)xsec_mom_reco_eff_m1.at(function)->Clone("histoPmu_m1");
+      histoPmu    = (TH1F*)xsec_mom_eff->Clone("histoPmu");
+      histoPmu_p1 = (TH1F*)xsec_mom_eff_p1.at(function)->Clone("histoPmu_p1");
+      histoPmu_m1 = (TH1F*)xsec_mom_eff_m1.at(function)->Clone("histoPmu_m1");
     }
     else if (variable == 1) { // CosThetaMu
       histoPmu    = (TH1F*)xsec_theta_eff->Clone("histoPmu");
@@ -1767,8 +1767,7 @@ void EvtWgtAnalysis::MakePlots(bool normalised, int variable) {
     pad1->SetGridx();         // Vertical grid
     pad1->Draw();             // Draw the upper pad: pad1
     pad1->cd();               // pad1 becomes the current pad
-    histoPmu_p1->SetMinimum(0.0001); // Otherwise 0 label overlaps
-    if (variable == 0 || variable == 1) histoPmu_p1->SetMaximum(0.9);
+    if (variable == 0 || variable == 1) histoPmu_p1->SetMaximum(0.5);
     histoPmu_p1->SetStats(0);          // No statistics on upper plot
     histoPmu_m1->SetStats(0);          // No statistics on upper plot
     histoPmu->SetStats(0);          // No statistics on upper plot
@@ -1834,23 +1833,23 @@ void EvtWgtAnalysis::MakePlots(bool normalised, int variable) {
     
     
     // Define the first ratio plot
-    TH1F *ratio_p1 = (TH1F*)histoPmu->Clone("ratio_p1");
+    TH1F *ratio_p1 = (TH1F*)histoPmu_p1->Clone("ratio_p1");
     //ratio_p1->SetMinimum(0.92);  // Define Y ..
     //ratio_p1->SetMaximum(1.08); // .. range
     //ratio_p1->Sumw2();
     ratio_p1->SetStats(0);      // No statistics on lower plot
-    ratio_p1->Divide(histoPmu_p1);
+    ratio_p1->Divide(histoPmu);
     ratio_p1->SetLineWidth(2);
     ratio_p1->SetLineColor(kRed+1);
     //ratio_p1->Draw("hist");       // Draw the ratio plot
     
     // Define the second ratio plot
-    TH1F *ratio_m1 = (TH1F*)histoPmu->Clone("ratio_m1");
+    TH1F *ratio_m1 = (TH1F*)histoPmu_m1->Clone("ratio_m1");
     //ratio_m1->SetMinimum(0.9);  // Define Y ..
     //ratio_m1->SetMaximum(1.1); // .. range
     //ratio_m1->Sumw2();
     ratio_m1->SetStats(0);      // No statistics on lower plot
-    ratio_m1->Divide(histoPmu_m1);
+    ratio_m1->Divide(histoPmu);
     ratio_m1->SetLineWidth(2);
     ratio_m1->SetLineColor(kGreen+2);
     //ratio_m1->Draw("hist same");       // Draw the ratio plot
@@ -1886,7 +1885,7 @@ void EvtWgtAnalysis::MakePlots(bool normalised, int variable) {
     
     //ratio_p1->GetYaxis()->SetRangeUser(min+0.1*min, max+0.1*max);
     
-    
+   histoPmu_p1->SetMinimum(0.0001); // Otherwise 0 label overlaps (need to do it after the THStack, otherwise sets the minimum)
     
     
     //**********************
