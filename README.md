@@ -74,8 +74,8 @@ root -l
 ## Production
 
 Produced files are in `/uboone/data/users/mdeltutt/EventWeight/`.
-Merged root files with event weights for _all_ GENIE parameters calculated with +-1 sigma:
+Merged root anatree files with event weights for _all_ GENIE parameters calculated with +-1 sigma:
 
-* anatree_bnb_eventWeight_all_5.root
-* anatree_bnb_eventWeight_all_6.root
-* anatree_bnb_eventWeight_all_7.root (with nutools fix)  1.209150e+20 POT
+* standard_reco_hist_merged_all_5.root
+* standard_reco_hist_merged_all_6.root
+* standard_reco_hist_merged_all_7.root (with nutools fix)  1.209150e+20 POT
