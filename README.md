@@ -71,3 +71,8 @@ root -l
 ```
 
 
+## Production
+
+Merged root files with event weights for all GENIE parameters calculated with +-1 sigma:
+
+
